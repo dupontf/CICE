@@ -156,7 +156,7 @@
 
       character (len=char_len) :: shortwave, albedo_type, conduct, fbot_xfer_type, &
         tfrz_option, saltflux_option, frzpnd, atmbndy, wave_spec_type, snwredist, snw_aging_table, &
-        capping_method, snw_ssp_table
+        congel_freeze, capping_method, snw_ssp_table
 
       logical (kind=log_kind) :: calc_Tsfc, formdrag, highfreq, calc_strair, wave_spec, &
         sw_redist, calc_dragio, use_smliq_pnd, snwgrain
@@ -273,9 +273,9 @@
         highfreq,       natmiter,        atmiter_conv,  calc_dragio,    &
         ustar_min,      emissivity,      iceruf,        iceruf_ocn,     &
         fbot_xfer_type, update_ocn_f,    l_mpond_fresh, tfrz_option,    &
-        saltflux_option,ice_ref_salinity,cpl_frazil,    zTrf,           &
+        saltflux_option,ice_ref_salinity,cpl_frazil,    congel_freeze,  &
         oceanmixed_ice, restore_ice,     restore_ocn,   trestore,       &
-        precip_units,   default_season,  wave_spec_type,nfreq,          &
+        precip_units,   default_season,  wave_spec_type,nfreq, zTrf,    &
         atm_data_type,  ocn_data_type,   bgc_data_type, fe_data_type,   &
         ice_data_type,  ice_data_conc,   ice_data_dist, restore_ice_to, &
         fyear_init,     ycycle,          wave_spec_file,restart_coszen, &
@@ -530,6 +530,7 @@
       atmiter_conv    = c0        ! ustar convergence criteria
       precip_units    = 'mks'     ! 'mm_per_month' or
                                   ! 'mm_per_sec' = 'mks' = kg/m^2 s
+      congel_freeze   = 'two-step'! congelation freezing method
       tfrz_option     = 'mushy'   ! freezing temp formulation
       saltflux_option = 'constant'    ! saltflux calculation
       ice_ref_salinity = 4.0_dbl_kind ! Ice reference salinity for coupling
@@ -1144,6 +1145,7 @@
       call broadcast_scalar(wave_spec_type,       master_task)
       call broadcast_scalar(wave_spec_file,       master_task)
       call broadcast_scalar(nfreq,                master_task)
+      call broadcast_scalar(congel_freeze,        master_task)
       call broadcast_scalar(tfrz_option,          master_task)
       call broadcast_scalar(saltflux_option,      master_task)
       call broadcast_scalar(ice_ref_salinity,     master_task)
@@ -2197,6 +2199,7 @@
          if (trim(tfrz_option) == 'constant') then
             write(nu_diag,1002) ' Tocnfrz          = ', Tocnfrz
          endif
+         write(nu_diag,1030) ' congel_freeze    = ', trim(congel_freeze)
          if (update_ocn_f) then
             tmpstr2 = ' : frazil water/salt fluxes included in ocean fluxes'
          else
@@ -2622,8 +2625,8 @@
          floediam_in=floediam, hfrazilmin_in=hfrazilmin, Tliquidus_max_in=Tliquidus_max, &
          aspect_rapid_mode_in=aspect_rapid_mode, dSdt_slow_mode_in=dSdt_slow_mode, &
          phi_c_slow_mode_in=phi_c_slow_mode, phi_i_mushy_in=phi_i_mushy, conserv_check_in=conserv_check, &
-         wave_spec_type_in = wave_spec_type, wave_spec_in=wave_spec, nfreq_in=nfreq, zTrf_in=zTrf,  &
-         update_ocn_f_in=update_ocn_f, cpl_frazil_in=cpl_frazil, &
+         wave_spec_type_in = wave_spec_type, wave_spec_in=wave_spec, nfreq_in=nfreq, zTrf_in=zTrf, &
+         update_ocn_f_in=update_ocn_f, cpl_frazil_in=cpl_frazil, congel_freeze_in=congel_freeze, &
          tfrz_option_in=tfrz_option, kalg_in=kalg, fbot_xfer_type_in=fbot_xfer_type, &
          saltflux_option_in=saltflux_option, ice_ref_salinity_in=ice_ref_salinity, &
          Pstar_in=Pstar, Cstar_in=Cstar, iceruf_in=iceruf, iceruf_ocn_in=iceruf_ocn, calc_dragio_in=calc_dragio, &
