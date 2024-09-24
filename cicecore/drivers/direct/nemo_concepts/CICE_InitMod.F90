@@ -157,7 +157,7 @@
       use ice_init, only: init_state
       use ice_init_column, only: init_shortwave
       use ice_kinds_mod
-      use ice_restoring, only: ice_HaloRestore_init, restore_ice_mask, ice_read_restoring_mask
+      use ice_restoring, only: ice_HaloRestore_update, restore_ice_mask, ice_read_restoring_mask
       use ice_transport_driver, only: init_transport
 
       logical(kind=log_kind) :: tr_aero, tr_zaero, skl_bgc, z_tracers, &
@@ -169,9 +169,9 @@
 #endif
       call init_state           ! initialize the ice state
       call init_transport       ! initialize horizontal transport
-      call ice_HaloRestore_init ! restored boundary conditions
       if (restore_ice_mask) &
          call ice_read_restoring_mask! read restoring mask if restore_ice_mask is true
+      call ice_HaloRestore_update ! restored boundary conditions
 
       call icepack_query_parameters(skl_bgc_out=skl_bgc, z_tracers_out=z_tracers, &
           wave_spec_out=wave_spec)

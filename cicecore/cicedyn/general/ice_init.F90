@@ -2505,7 +2505,8 @@
          if (restore_ice .or. restore_ocn) &
          write(nu_diag,1021) ' trestore         = ', trestore
          if (restore_ice_mask) then
-            if ( trim(restore_ice_to) /= 'zero' ) then
+            if ( trim(restore_ice_to) /= 'zero'  &
+                 .and. trim(restore_ice_to) /= 'file' ) then
                if (my_task == master_task) write(nu_diag,*) subname//' ERROR: inconsistency between restore_ice_to ',trim(restore_ice_to), ' and restore_ice_mask=T'
                abort_list = trim(abort_list)//":26"
             endif
