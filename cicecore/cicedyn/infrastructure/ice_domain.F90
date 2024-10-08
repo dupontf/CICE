@@ -546,37 +546,35 @@
 #else
          do j=this_block%jlo,this_block%jhi
 #endif
-            if (this_block%j_glob(j) > 0) then
 #ifdef CICE_IN_NEMO
-               do i=1,nx_block
+            do i=1,nx_block
 #else
-               do i=this_block%ilo,this_block%ihi
+            do i=this_block%ilo,this_block%ihi
 #endif
-                  if (this_block%i_glob(i) > 0) then
-                     ig = this_block%i_glob(i)
-                     jg = this_block%j_glob(j)
-                     if (grid_ice == 'C' .or. grid_ice == 'CD') then
-                        ! Have to be careful about block elimination with C/CD
-                        ! Use a bigger stencil
-                        igm1 = mod(ig-2+nx_global,nx_global)+1
-                        igp1 = mod(ig,nx_global)+1
-                        jgm1 = max(jg-1,1)
-                        jgp1 = min(jg+1,ny_global)
-                        if ((KMTG(ig  ,jg  ) > puny .or.                             &
-                             KMTG(igm1,jg  ) > puny .or. KMTG(igp1,jg  ) > puny .or. &
-                             KMTG(ig  ,jgp1) > puny .or. KMTG(ig  ,jgm1) > puny) .and. &
-                            (ULATG(ig,jg) < shlat/rad_to_deg .or.          &
-                             ULATG(ig,jg) > nhlat/rad_to_deg) )            &
-                             nocn(n) = nocn(n) + flat(ig,jg)
-                     else
-                        if (KMTG(ig,jg) > puny .and.                      &
-                           (ULATG(ig,jg) < shlat/rad_to_deg .or.          &
-                            ULATG(ig,jg) > nhlat/rad_to_deg) )            &
-                             nocn(n) = nocn(n) + flat(ig,jg)
-                     endif
+               ig = this_block%i_glob(i)
+               jg = this_block%j_glob(j)
+               if (jg > 0 .and. ig > 0) then
+                  if (grid_ice == 'C' .or. grid_ice == 'CD') then
+                     ! Have to be careful about block elimination with C/CD
+                     ! Use a bigger stencil
+                     igm1 = mod(ig-2+nx_global,nx_global)+1
+                     igp1 = mod(ig,nx_global)+1
+                     jgm1 = max(jg-1,1)
+                     jgp1 = min(jg+1,ny_global)
+                     if ((KMTG(ig  ,jg  ) > puny .or.                             &
+                          KMTG(igm1,jg  ) > puny .or. KMTG(igp1,jg  ) > puny .or. &
+                          KMTG(ig  ,jgp1) > puny .or. KMTG(ig  ,jgm1) > puny) .and. &
+                         (ULATG(ig,jg) < shlat/rad_to_deg .or.          &
+                          ULATG(ig,jg) > nhlat/rad_to_deg) )            &
+                          nocn(n) = nocn(n) + flat(ig,jg)
+                  else
+                     if (KMTG(ig,jg) > puny .and.                      &
+                        (ULATG(ig,jg) < shlat/rad_to_deg .or.          &
+                         ULATG(ig,jg) > nhlat/rad_to_deg) )            &
+                          nocn(n) = nocn(n) + flat(ig,jg)
                   endif
-               end do
-            endif
+               endif
+            end do
          end do
 
          !*** with array syntax, we actually do work on non-ocean
