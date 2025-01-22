@@ -30,10 +30,11 @@
          restore_ice                 ! restore ice state if true
 
       character(len=char_len), public :: &
-         restore_ice_to              ! values to which ice state is restored
+         restore_ice_to          , & ! values to which ice state is restored
                                      ! 'initial'  => restore to initial ice state
                                      ! 'defined'  => restore to hardcoded values
                                      ! 'zero'     => restore to zero
+         restore_data_dir            ! directory to read ice state from (restore_ice_to = 'file')
 
       logical (kind=log_kind), public :: &
          restore_ice_mask         , &! restore ice over mask if true
@@ -53,6 +54,10 @@
 
       real (kind=dbl_kind), dimension (:,:,:), allocatable, public :: &
          iceRestMask     ! ice restoring mask
+
+      real (kind=dbl_kind), dimension (:,:,:), allocatable, public :: &
+         aice_data , &   ! concentration of ice (read from file)
+         vice_data       ! mean thickness of ice (read from file)
 
 !=======================================================================
 
@@ -913,6 +918,94 @@
       iceRestMask(:,:,:) = iceRestMask(:,:,:) * hm(:,:,:)
 
       end subroutine ice_read_restoring_mask
+!=======================================================================
+
+!=======================================================================
+
+! Read restoring data from netcdf
+!
+! author: Roy 2024-09 (inspired by FD ice_read_restoring_mask)
+
+      subroutine ice_read_restoring_data(idate_read)
+
+      use ice_communicate, only: my_task, master_task
+      use ice_fileunits, only: nu_diag
+      use ice_read_write
+      use ice_constants, only: field_loc_center, field_type_scalar, p01, p001
+      use ice_blocks, only: block, nx_block, ny_block, get_block
+      use ice_grid, only: hm
+      use ice_domain, only: nblocks
+
+      integer (kind=int_kind), intent(in) :: idate_read
+
+      ! locals
+      integer (kind=int_kind) :: &
+         fid_data        ! file id for netCDF file
+
+      character (char_len) :: &
+            fieldname    ! field name in netcdf file
+
+      character (char_len_long) :: &
+            data_file    ! input data file name
+
+      character (len=8) :: &
+            idate_string ! current date as string
+
+      logical (kind=log_kind) :: diag=.true.
+
+      integer (kind=int_kind) :: i,j,iblk
+
+      aice_data(:,:,:) = c0
+
+      if (my_task == master_task) then
+
+          write(idate_string,'(i8)') idate_read
+          data_file = trim(restore_data_dir) // '/' // idate_string // '.nc'
+          write (nu_diag,*) ' '
+          write (nu_diag,*) 'Restoring data file: ', trim(data_file)
+          call flush(nu_diag)
+
+          call ice_open_nc(data_file,fid_data)
+
+      endif
+
+      fieldname='aice'
+
+      call ice_read_nc(fid_data,1,fieldname,aice_data,diag, &
+                    field_loc=field_loc_center, &
+                    field_type=field_type_scalar)
+
+      fieldname='vice'
+
+      call ice_read_nc(fid_data,1,fieldname,vice_data,diag, &
+                    field_loc=field_loc_center, &
+                    field_type=field_type_scalar)
+
+      if (my_task == master_task) then
+         call ice_close_nc(fid_data)
+         write(nu_diag,*) 'closing file ',TRIM(data_file)
+         call flush(nu_diag)
+      endif
+
+      ! ensure data is only one over wet points
+      aice_data(:,:,:) =  aice_data(:,:,:) * hm(:,:,:)
+      vice_data(:,:,:) =  vice_data(:,:,:) * hm(:,:,:)
+
+      do iblk = 1, nblocks
+         do j = 1, ny_block
+         do i = 1, nx_block
+            aice_data(i,j,iblk)=min(aice_data(i,j,iblk),c1)
+            if ( aice_data(i,j,iblk) < p01 .or. vice_data(i,j,iblk) < p001 ) then
+                 ! Avoid problems when dividing for computing hbar with vice_data
+                 aice_data(i,j,iblk)=c0
+                 vice_data(i,j,iblk)=c0
+            endif
+         enddo
+         enddo
+      enddo
+
+
+      end subroutine ice_read_restoring_data
 !=======================================================================
 
       end module ice_restoring
