@@ -121,7 +121,8 @@
                             algo_nonlin, fpfunc_andacc, dim_andacc, reltol_andacc, &
                             damping_andacc, start_andacc, use_mean_vrel, ortho_type
       use ice_transport_driver, only: advection, conserv_check
-      use ice_restoring, only: restore_ice, restore_ice_to, restore_ice_mask
+      use ice_restoring, only: restore_ice, restore_ice_to, &
+                               restore_ice_mask, restore_ice_salt_vol_flux
       use ice_timers, only: timer_stats
       use ice_memusage, only: memory_stats
       use ice_fileunits, only: goto_nml
@@ -278,6 +279,7 @@
         atm_data_type,  ocn_data_type,   bgc_data_type, fe_data_type,   &
         ice_data_type,  ice_data_conc,   ice_data_dist, restore_ice_to, &
         fyear_init,     ycycle,          wave_spec_file,restart_coszen, &
+        restore_ice_salt_vol_flux,                                      &
         atm_data_dir,   ocn_data_dir,    bgc_data_dir,                  &
         atm_data_format, ocn_data_format, rotate_wind,                  &
         oceanmixed_file, atm_data_version, restore_ice_mask
@@ -550,6 +552,7 @@
       restore_ice     = .false.   ! restore ice state on grid edges if true
       restore_ice_to  = 'initial' ! restore ice state to initial ice state ('initial'), hardcoded values ('defined') or zero ('zero')
       restore_ice_mask= .false.   ! by default no ice restoring depending on mask, set to true in namelist if you want to restore depending on mask read from netcdf file
+      restore_ice_salt_vol_flux= .false.   ! by default no ice restoring salt/freshwater flux adjustment
       debug_forcing   = .false.   ! true writes diagnostics for input forcing
 
       latpnt(1) =  90._dbl_kind   ! latitude of diagnostic point 1 (deg)
@@ -1158,6 +1161,7 @@
       call broadcast_scalar(restore_ice,          master_task)
       call broadcast_scalar(restore_ice_to,       master_task)
       call broadcast_scalar(restore_ice_mask,     master_task)
+      call broadcast_scalar(restore_ice_salt_vol_flux,     master_task)
       call broadcast_scalar(debug_forcing,        master_task)
       call broadcast_array (latpnt(1:2),          master_task)
       call broadcast_array (lonpnt(1:2),          master_task)
@@ -2504,6 +2508,7 @@
                abort_list = trim(abort_list)//":26"
             endif
             write(nu_diag,1011) ' restore_ice_mask = ', restore_ice_mask
+            write(nu_diag,1011) ' restore_ice_salt_vol_flux = ', restore_ice_salt_vol_flux
          endif
 
          write(nu_diag,*) ' '

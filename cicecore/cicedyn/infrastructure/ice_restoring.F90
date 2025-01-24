@@ -36,7 +36,8 @@
                                      ! 'zero'     => restore to zero
 
       logical (kind=log_kind), public :: &
-         restore_ice_mask            ! restore ice over mask if true
+         restore_ice_mask         , &! restore ice over mask if true
+         restore_ice_salt_vol_flux   ! restore salt and fresh water volume according to snow/ice adjustments
 
       !-----------------------------------------------------------------
       ! state of the ice for each category
@@ -823,15 +824,17 @@
       do n = 1, ncat
          do j = 1, ny_block
             do i = 1, nx_block
-               ! convert the changes in volume to fresh water flux
-               ! negative for ice growth, positive for melting
-               ! since for melting, freshwater flux to ocean is positive
-               fresh_da(i,j,iblk) = fresh_da(i,j,iblk) &
-                 - (vicen_rest(i,j,n,iblk)-vicen(i,j,n,iblk)) * iceRestMask(i,j,iblk) * rhoi / trest
-               fresh_da(i,j,iblk) = fresh_da(i,j,iblk) &
-                 - (vsnon_rest(i,j,n,iblk)-vsnon(i,j,n,iblk)) * iceRestMask(i,j,iblk) * rhos / trest
-               fsalt_da(i,j,iblk) = fsalt_da(i,j,iblk) &
-                 - (vicen_rest(i,j,n,iblk)-vicen(i,j,n,iblk)) * iceRestMask(i,j,iblk) * ice_ref_salinity * p001 / trest
+               if ( restore_ice_salt_vol_flux ) then
+                  ! convert the changes in volume to fresh water flux
+                  ! negative for ice growth, positive for melting
+                  ! since for melting, freshwater flux to ocean is positive
+                  fresh_da(i,j,iblk) = fresh_da(i,j,iblk) &
+                    - (vicen_rest(i,j,n,iblk)-vicen(i,j,n,iblk)) * iceRestMask(i,j,iblk) * rhoi / trest
+                  fresh_da(i,j,iblk) = fresh_da(i,j,iblk) &
+                    - (vsnon_rest(i,j,n,iblk)-vsnon(i,j,n,iblk)) * iceRestMask(i,j,iblk) * rhos / trest
+                  fsalt_da(i,j,iblk) = fsalt_da(i,j,iblk) &
+                    - (vicen_rest(i,j,n,iblk)-vicen(i,j,n,iblk)) * iceRestMask(i,j,iblk) * ice_ref_salinity * p001 / trest
+               endif
                aicen(i,j,n,iblk) = aicen(i,j,n,iblk) &
                   + (aicen_rest(i,j,n,iblk)-aicen(i,j,n,iblk))*ctime * iceRestMask(i,j,iblk)
                vicen(i,j,n,iblk) = vicen(i,j,n,iblk) &
