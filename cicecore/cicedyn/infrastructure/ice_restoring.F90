@@ -430,7 +430,7 @@
       do n = 1, ncat
          hinit(n) = c0
          ainit(n) = c0
-         if (hbar > hin_max(n-1) .and. hbar < hin_max(n)) then
+         if (hbar >= hin_max(n-1) .and. hbar < hin_max(n)) then
             hinit(n) = hbar
             ainit(n) = 0.95_dbl_kind ! initial ice concentration
          endif
