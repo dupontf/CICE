@@ -799,7 +799,23 @@
 
    if (jg > ny_global .and. jg <= ny_global + nghost) then
       jg = 2 * ny_global - jg + j_offset
-      ig = nx_global - ig + i_offset
+      if (this_block%iblock == 1) then
+         ! first two points have ig = [nx_global, 1],
+         ! but are outside the physical grid
+         if (i > 2) then
+            ig = nx_global - ig + i_offset
+         else
+             ig = 0
+         endif
+      elseif (this_block%iblock == nblocks_x) then
+         ! point in halo column has ig = 1 which is already correct,
+         ! padding points have ig = 0 which we leave as-is
+         if (ig > 1) then
+            ig = nx_global - ig + i_offset
+         endif
+      else
+         ig = nx_global - ig + i_offset
+      endif
    endif
 
  end subroutine get_global_indices
