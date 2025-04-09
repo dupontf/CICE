@@ -24,19 +24,21 @@
 
       implicit none
       private
-      public :: ice_HaloRestore_init, ice_HaloRestore, ice_MaskRestore, ice_read_restoring_mask
+      public :: ice_HaloRestore_update, ice_HaloRestore, ice_MaskRestore, ice_read_restoring_mask
 
       logical (kind=log_kind), public :: &
          restore_ice                 ! restore ice state if true
 
       character(len=char_len), public :: &
-         restore_ice_to              ! values to which ice state is restored
+         restore_ice_to          , & ! values to which ice state is restored
                                      ! 'initial'  => restore to initial ice state
                                      ! 'defined'  => restore to hardcoded values
                                      ! 'zero'     => restore to zero
+         restore_data_dir            ! directory to read ice state from (restore_ice_to = 'file')
 
       logical (kind=log_kind), public :: &
-         restore_ice_mask            ! restore ice over mask if true
+         restore_ice_mask         , &! restore ice over mask if true
+         restore_ice_salt_vol_flux   ! restore salt and fresh water volume according to snow/ice adjustments
 
       !-----------------------------------------------------------------
       ! state of the ice for each category
@@ -53,6 +55,12 @@
       real (kind=dbl_kind), dimension (:,:,:), allocatable, public :: &
          iceRestMask     ! ice restoring mask
 
+      real (kind=dbl_kind), dimension (:,:,:), allocatable, public :: &
+         aice_data , &   ! concentration of ice (read from file)
+         vice_data       ! mean thickness of ice (read from file)
+
+      integer (int_kind), public :: idate_rest=-9
+
 !=======================================================================
 
       contains
@@ -63,7 +71,7 @@
 !  in cells surrounding the grid.
 
 
- subroutine ice_HaloRestore_init
+ subroutine ice_HaloRestore_update
 
       use ice_blocks, only: block, get_block, nblocks_x, nblocks_y
       use ice_communicate, only: my_task, master_task
@@ -72,6 +80,7 @@
       use ice_grid, only: tmask, hm
       use ice_flux, only: Tf, Tair, salinz, Tmltz
       use ice_restart_shared, only: restart_ext
+      use ice_calendar, only: idate
 
    integer (int_kind) :: &
      i,j,iblk,nt,n,      &! dummy loop indices
@@ -86,9 +95,21 @@
    type (block) :: &
      this_block  ! block info for current block
 
-   character(len=*), parameter :: subname = '(ice_HaloRestore_init)'
+   character(len=*), parameter :: subname = '(ice_HaloRestore_update)'
+
+   logical (kind=log_kind) :: first_call
 
    if (.not. restore_ice .and. .not.restore_ice_mask) return
+
+   first_call = .not. allocated(aicen_rest)
+
+   if ( trim(restore_ice_to) == 'file' .and. idate_rest /= idate ) then
+        ! implicitely means a daily update
+        ! continue to read data file below, else return
+        idate_rest = idate
+   elseif (.not. first_call) then
+        return
+   endif
 
    call icepack_query_tracer_sizes(ntrcr_out=ntrcr)
    call icepack_warnings_flush(nu_diag)
@@ -100,15 +121,19 @@
       if (my_task == master_task) write (nu_diag,*) 'WARNING: restart_ext=F and open boundaries'
    endif
 
-   allocate (aicen_rest(nx_block,ny_block,ncat,max_blocks), &
-             vicen_rest(nx_block,ny_block,ncat,max_blocks), &
-             vsnon_rest(nx_block,ny_block,ncat,max_blocks), &
-             trcrn_rest(nx_block,ny_block,ntrcr,ncat,max_blocks))
+   if (first_call) then
+      allocate (aice_data(nx_block,ny_block,max_blocks), &
+                vice_data(nx_block,ny_block,max_blocks), &
+                aicen_rest(nx_block,ny_block,ncat,max_blocks), &
+                vicen_rest(nx_block,ny_block,ncat,max_blocks), &
+                vsnon_rest(nx_block,ny_block,ncat,max_blocks), &
+                trcrn_rest(nx_block,ny_block,ntrcr,ncat,max_blocks))
 
-   aicen_rest(:,:,:,:) = c0
-   vicen_rest(:,:,:,:) = c0
-   vsnon_rest(:,:,:,:) = c0
-   trcrn_rest(:,:,:,:,:) = c0
+      aicen_rest(:,:,:,:) = c0
+      vicen_rest(:,:,:,:) = c0
+      vsnon_rest(:,:,:,:) = c0
+      trcrn_rest(:,:,:,:,:) = c0
+   endif
 
 !-----------------------------------------------------------------------
 ! initialize
@@ -116,7 +141,9 @@
 ! these arrays could be set to values read from a file...
 !-----------------------------------------------------------------------
 
-   if (trim(restore_ice_to) == 'defined') then
+   if (trim(restore_ice_to) == 'defined' .or. trim(restore_ice_to) == 'file' ) then
+
+      if (trim(restore_ice_to) == 'file') call ice_read_restoring_data(idate_rest)
 
       ! restore to defined ice state
       !$OMP PARALLEL DO PRIVATE(iblk,ilo,ihi,jlo,jhi,this_block, &
@@ -143,7 +170,12 @@
                                aicen_rest(:,:,  :,iblk), &
                                trcrn_rest(:,:,:,:,iblk), ntrcr,         &
                                vicen_rest(:,:,  :,iblk), &
-                               vsnon_rest(:,:,  :,iblk))
+                               vsnon_rest(:,:,  :,iblk), &
+                               iceRestMask(:,:,    iblk), &
+                               aice_data  (:,:,    iblk), &
+                               vice_data  (:,:,    iblk), &
+                               idate_rest)
+
       enddo ! iblk
       !$OMP END PARALLEL DO
 
@@ -294,7 +326,7 @@
    if (my_task == master_task) &
       write (nu_diag,*) 'ice restoring timescale = ',trestore,' days'
 
- end subroutine ice_HaloRestore_init
+ end subroutine ice_HaloRestore_update
 
 !=======================================================================
 
@@ -310,13 +342,17 @@
                                 salinz,   Tmltz,    &
                                 tmask,    aicen,    &
                                 trcrn,    ntrcr,    &
-                                vicen,    vsnon)
+                                vicen,    vsnon,    &
+                                iceRestMask, &
+                                aice_data,  &
+                                vice_data, idate_rest)
 
 ! authors: E. C. Hunke, LANL
 
       use ice_arrays_column, only: hin_max
       use ice_blocks, only: nblocks_x, nblocks_y
-      use ice_domain_size, only: nilyr, nslyr, ncat
+      use ice_domain_size, only: nilyr, nslyr, ncat, nx_global, ny_global
+      use ice_domain, only: ew_boundary_type, ns_boundary_type
 
       integer (kind=int_kind), intent(in) :: &
          nx_block, ny_block, & ! block dimensions
@@ -327,6 +363,11 @@
          iblock            , & ! block indices
          jblock            , & !
          ntrcr                 ! number of tracers in use
+
+      integer (kind=int_kind), intent(in) :: idate_rest
+                               ! restoring date used to read file
+                               ! if < 0 ==> will use fixed condition
+                               ! else, use aice_data, vice_data
 
       real (kind=dbl_kind), dimension (nx_block,ny_block), intent(in) :: &
          Tair    , & ! air temperature  (K)
@@ -348,6 +389,11 @@
          trcrn     ! ice tracers
                    ! 1: surface temperature of ice/snow (C)
 
+      real (kind=dbl_kind), dimension (nx_block,ny_block), intent(in) :: &
+         iceRestMask,  &  ! (=1. for restoring cells)
+         aice_data,    &  ! (concentration read from file)
+         vice_data        ! (mean thickness read from file)
+
       ! local variables
 
       integer (kind=int_kind) :: &
@@ -366,7 +412,7 @@
          icells          ! number of cells initialized with ice
 
       logical (kind=log_kind) :: &
-         tr_brine
+         tr_brine, ew_boundary_open, ns_boundary_open
 
       integer (kind=int_kind), dimension(nx_block*ny_block) :: &
          indxi, indxj    ! compressed indices for cells with restoring
@@ -425,24 +471,47 @@
       ! initial area and thickness in ice-occupied restoring cells
       !-----------------------------------------------------------------
 
-      hbar = c2  ! initial ice thickness
-      hsno_init = 0.20_dbl_kind ! initial snow thickness (m)
-      do n = 1, ncat
-         hinit(n) = c0
-         ainit(n) = c0
-         if (hbar > hin_max(n-1) .and. hbar < hin_max(n)) then
-            hinit(n) = hbar
-            ainit(n) = 0.95_dbl_kind ! initial ice concentration
-         endif
-      enddo
+      if ( idate_rest > 0 ) then
+         hsno_init = 0.1_dbl_kind
+      else
+         hbar = c2  ! initial ice thickness
+         hsno_init = 0.20_dbl_kind ! initial snow thickness (m)
+         do n = 1, ncat
+            hinit(n) = c0
+            ainit(n) = c0
+            if (hbar >= hin_max(n-1) .and. hbar < hin_max(n)) then
+               hinit(n) = hbar
+               ainit(n) = 0.95_dbl_kind ! initial ice concentration
+            endif
+         enddo
+      endif
 
       !-----------------------------------------------------------------
       ! Define cells where ice is placed (or other values are used)
       ! Edges using initial values (zero, above) are commented out
       !-----------------------------------------------------------------
 
+      ns_boundary_open = (trim(ns_boundary_type) == 'open')
+      ew_boundary_open = (trim(ew_boundary_type) == 'open')
+
       icells = 0
-      if (iblock == 1) then              ! west edge
+      if (restore_ice_mask) then
+         do j = 1, ny_block
+         do i = 1, nx_block
+            ! force restoring to zero near global boundaries if open
+            ! no buildups, no problems with tmask discrepencies
+            ! see ice_read_restoring_mask as well
+            if (iceRestMask(i,j) > c0 &
+                .and. .not. (ew_boundary_open .and. (iglob(i) <= 2  .or. iglob(i) > nx_global-2)) &
+                .and. .not. (ns_boundary_open .and. (jglob(j) <= 2  .or. jglob(j) > ny_global-2)) ) then
+               icells = icells + 1
+               indxi(icells) = i
+               indxj(icells) = j
+            endif
+         enddo
+         enddo
+      else
+         if (iblock == 1) then              ! west edge
             do j = 1, ny_block
             do i = 1, ilo
                if (tmask(i,j)) then
@@ -452,9 +521,9 @@
                endif
             enddo
             enddo
-      endif
+         endif
 
-      if (iblock == nblocks_x) then      ! east edge
+         if (iblock == nblocks_x) then      ! east edge
             ! locate ghost cell column (avoid padding)
             ibc = nx_block
             do i = nx_block, 1, -1
@@ -476,9 +545,9 @@
                endif
             enddo
             enddo
-      endif
+         endif
 
-      if (jblock == 1) then              ! south edge
+         if (jblock == 1) then              ! south edge
             do j = 1, jlo
             do i = 1, nx_block
                if (tmask(i,j)) then
@@ -488,9 +557,9 @@
                endif
             enddo
             enddo
-      endif
+         endif
 
-      if (jblock == nblocks_y) then      ! north edge
+         if (jblock == nblocks_y) then      ! north edge
             ! locate ghost cell row (avoid padding)
             ibc = ny_block
             do j = ny_block, 1, -1
@@ -512,6 +581,7 @@
                endif
             enddo
             enddo
+         endif
       endif
 
       !-----------------------------------------------------------------
@@ -525,9 +595,20 @@
                j = indxj(ij)
 
                ! ice volume, snow volume
-               aicen(i,j,n) = ainit(n)
-               vicen(i,j,n) = hinit(n) * ainit(n) ! m
-               vsnon(i,j,n) = min(aicen(i,j,n)*hsno_init,p2*vicen(i,j,n))
+               if ( idate_rest > 0 ) then
+                  if ( vice_data(i,j) > c0 .and. aice_data(i,j) > c0 ) then
+                     hbar = vice_data(i,j)/aice_data(i,j)
+                     if (hbar >= hin_max(n-1) .and. hbar < hin_max(n)) then
+                        aicen(i,j,n) = aice_data(i,j)
+                        vicen(i,j,n) = vice_data(i,j)
+                        vsnon(i,j,n) = aicen(i,j,n)*hsno_init
+                     endif
+                  endif
+               else
+                  aicen(i,j,n) = ainit(n)
+                  vicen(i,j,n) = hinit(n) * ainit(n) ! m
+                  vsnon(i,j,n) = min(aicen(i,j,n)*hsno_init,p2*vicen(i,j,n))
+               endif
 
                call icepack_init_trcr(Tair=Tair(i,j),    Tf=Tf(i,j),  &
                                       Sprofile=salinz(i,j,:),         &
@@ -802,6 +883,8 @@
       endif
       ctime = dt/trest
 
+      call ice_HaloRestore_update
+
 !-----------------------------------------------------------------------
 !
 !  Restore values in cells surrounding the grid
@@ -823,15 +906,17 @@
       do n = 1, ncat
          do j = 1, ny_block
             do i = 1, nx_block
-               ! convert the changes in volume to fresh water flux
-               ! negative for ice growth, positive for melting
-               ! since for melting, freshwater flux to ocean is positive
-               fresh_da(i,j,iblk) = fresh_da(i,j,iblk) &
-                 - (vicen_rest(i,j,n,iblk)-vicen(i,j,n,iblk)) * iceRestMask(i,j,iblk) * rhoi / trest
-               fresh_da(i,j,iblk) = fresh_da(i,j,iblk) &
-                 - (vsnon_rest(i,j,n,iblk)-vsnon(i,j,n,iblk)) * iceRestMask(i,j,iblk) * rhos / trest
-               fsalt_da(i,j,iblk) = fsalt_da(i,j,iblk) &
-                 - (vicen_rest(i,j,n,iblk)-vicen(i,j,n,iblk)) * iceRestMask(i,j,iblk) * ice_ref_salinity * p001 / trest
+               if ( restore_ice_salt_vol_flux ) then
+                  ! convert the changes in volume to fresh water flux
+                  ! negative for ice growth, positive for melting
+                  ! since for melting, freshwater flux to ocean is positive
+                  fresh_da(i,j,iblk) = fresh_da(i,j,iblk) &
+                    - (vicen_rest(i,j,n,iblk)-vicen(i,j,n,iblk)) * iceRestMask(i,j,iblk) * rhoi / trest
+                  fresh_da(i,j,iblk) = fresh_da(i,j,iblk) &
+                    - (vsnon_rest(i,j,n,iblk)-vsnon(i,j,n,iblk)) * iceRestMask(i,j,iblk) * rhos / trest
+                  fsalt_da(i,j,iblk) = fsalt_da(i,j,iblk) &
+                    - (vicen_rest(i,j,n,iblk)-vicen(i,j,n,iblk)) * iceRestMask(i,j,iblk) * ice_ref_salinity * p001 / trest
+               endif
                aicen(i,j,n,iblk) = aicen(i,j,n,iblk) &
                   + (aicen_rest(i,j,n,iblk)-aicen(i,j,n,iblk))*ctime * iceRestMask(i,j,iblk)
                vicen(i,j,n,iblk) = vicen(i,j,n,iblk) &
@@ -846,6 +931,18 @@
             enddo
          enddo
       enddo
+      if ( restore_ice_to == 'file' ) then
+         do n = 1, ncat
+            do j = 1, ny_block
+               do i = 1, nx_block
+                  do nt = 1, ntrcr
+                     trcrn(i,j,nt,n,iblk) = trcrn(i,j,nt,n,iblk) &
+                        + (trcrn_rest(i,j,nt,n,iblk)-trcrn(i,j,nt,n,iblk))*ctime * iceRestMask(i,j,iblk)
+                  enddo
+               enddo
+            enddo
+         enddo
+      endif
    enddo ! iblk
    !$OMP END PARALLEL DO
 
@@ -865,8 +962,11 @@
       use ice_fileunits, only: nu_diag
       use ice_read_write
       use ice_constants, only: field_loc_center, field_type_scalar
-      use ice_blocks, only: nx_block, ny_block
+      use ice_blocks, only: block, nx_block, ny_block, get_block
       use ice_grid, only: hm
+      use ice_domain, only: ew_boundary_type, ns_boundary_type, &
+          nblocks, blocks_ice
+      use ice_domain_size, only: nx_global, ny_global
 
       ! locals
       integer (kind=int_kind) :: &
@@ -878,11 +978,21 @@
       character (char_len_long) :: &        ! input data file names
             mask_file = 'ice_mask_restore.nc'
 
-      logical (kind=log_kind) :: diag=.true.
+      logical (kind=log_kind) :: diag=.true., ew_boundary_open, ns_boundary_open
 
+      integer (kind=int_kind) :: i,j,iblk
+
+      type (block) :: &
+        this_block  ! block info for current block
+
+      integer (int_kind) :: &
+        iglob(nx_block),    &! global indices
+        jglob(ny_block)      ! global indices
 
       allocate (iceRestMask(nx_block,ny_block,max_blocks))
 
+      ns_boundary_open = (trim(ns_boundary_type) == 'open')
+      ew_boundary_open = (trim(ew_boundary_type) == 'open')
 
       if (my_task == master_task) then
 
@@ -906,10 +1016,114 @@
          call flush(nu_diag)
       endif
 
+      ! If open boundaries, will force restoring to zero in a 2-cell-wide band along the boundary
+      ! See set_restore_var and ice_HaloRestore_update
+      do iblk = 1, nblocks
+         this_block = get_block(blocks_ice(iblk),iblk)
+         iglob = this_block%i_glob
+         jglob = this_block%j_glob
+         do j = 1, ny_block
+         do i = 1, nx_block
+            if ( (ew_boundary_open .and. (iglob(i) <= 2  .or. iglob(i) > nx_global-2)) &
+            .or. (ns_boundary_open .and. (jglob(j) <= 2  .or. jglob(j) > ny_global-2)) ) then
+               iceRestMask(i,j,iblk)=1.
+            endif
+         enddo
+         enddo
+      enddo
+
       ! ensure mask is only one over wet points
       iceRestMask(:,:,:) = iceRestMask(:,:,:) * hm(:,:,:)
 
       end subroutine ice_read_restoring_mask
+!=======================================================================
+
+!=======================================================================
+
+! Read restoring data from netcdf
+!
+! author: Roy 2024-09 (inspired by FD ice_read_restoring_mask)
+
+      subroutine ice_read_restoring_data(idate_read)
+
+      use ice_communicate, only: my_task, master_task
+      use ice_fileunits, only: nu_diag
+      use ice_read_write
+      use ice_constants, only: field_loc_center, field_type_scalar, p01, p001
+      use ice_blocks, only: block, nx_block, ny_block, get_block
+      use ice_grid, only: hm
+      use ice_domain, only: nblocks
+
+      integer (kind=int_kind), intent(in) :: idate_read
+
+      ! locals
+      integer (kind=int_kind) :: &
+         fid_data        ! file id for netCDF file
+
+      character (char_len) :: &
+            fieldname    ! field name in netcdf file
+
+      character (char_len_long) :: &
+            data_file    ! input data file name
+
+      character (len=8) :: &
+            idate_string ! current date as string
+
+      logical (kind=log_kind) :: diag=.true.
+
+      integer (kind=int_kind) :: i,j,iblk
+
+      aice_data(:,:,:) = c0
+
+      if (my_task == master_task) then
+
+          write(idate_string,'(i8)') idate_read
+          data_file = trim(restore_data_dir) // '/' // idate_string // '.nc'
+          write (nu_diag,*) ' '
+          write (nu_diag,*) 'Restoring data file: ', trim(data_file)
+          call flush(nu_diag)
+
+          call ice_open_nc(data_file,fid_data)
+
+      endif
+
+      fieldname='aice'
+
+      call ice_read_nc(fid_data,1,fieldname,aice_data,diag, &
+                    field_loc=field_loc_center, &
+                    field_type=field_type_scalar)
+
+      fieldname='vice'
+
+      call ice_read_nc(fid_data,1,fieldname,vice_data,diag, &
+                    field_loc=field_loc_center, &
+                    field_type=field_type_scalar)
+
+      if (my_task == master_task) then
+         call ice_close_nc(fid_data)
+         write(nu_diag,*) 'closing file ',TRIM(data_file)
+         call flush(nu_diag)
+      endif
+
+      ! ensure data is only one over wet points
+      aice_data(:,:,:) =  aice_data(:,:,:) * hm(:,:,:)
+      vice_data(:,:,:) =  vice_data(:,:,:) * hm(:,:,:)
+
+      do iblk = 1, nblocks
+         do j = 1, ny_block
+         do i = 1, nx_block
+            aice_data(i,j,iblk)=min(aice_data(i,j,iblk),c1)
+            if ( aice_data(i,j,iblk) < p01 .or. vice_data(i,j,iblk) < p001 ) then
+                 ! Avoid problems when dividing for computing hbar with vice_data
+                 aice_data(i,j,iblk)=c0
+                 vice_data(i,j,iblk)=c0
+            endif
+         enddo
+         enddo
+      enddo
+
+
+      end subroutine ice_read_restoring_data
 !=======================================================================
 
       end module ice_restoring
