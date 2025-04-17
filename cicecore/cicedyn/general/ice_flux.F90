@@ -58,7 +58,9 @@
          vocn    , & ! ocean current, y-direction (m/s),     on grid_ocn_dynv
          ss_tltx , & ! sea surface slope, x-direction (m/m), on grid_ocn_dynu
          ss_tlty , & ! sea surface slope, y-direction,       on grid_ocn_dynv
-         hwater  , & ! water depth for seabed stress calc (landfast ice)
+         strwrsxT, & ! wave radiative stress, x-direction (N/m^2)
+         strwrsyT, & ! wave radiative stress, y-direction (N/m^2)
+         hwater  , & ! water depth for seabed stress calc (landfast ice) 
 
        ! out to atmosphere
          strairxT, & ! stress on ice by air, x-direction at T points, computed in icepack
@@ -83,6 +85,8 @@
          strocnyU, & ! ice-ocean stress, y-direction at U points, computed in dyn_finish
          strtltxU, & ! stress due to sea surface slope, x-direction
          strtltyU, & ! stress due to sea surface slope, y-direction
+         strwrsxU, & ! wave radiative stress, x-direction (N/m^2)
+         strwrsyU, & ! wave radiative stress, y-direction (N/m^2)
          strintxU, & ! divergence of internal ice stress, x (N/m^2)
          strintyU, & ! divergence of internal ice stress, y (N/m^2)
          taubxN  , & ! seabed stress (x) at N points (N/m^2)
@@ -405,7 +409,9 @@
          vocn       (nx_block,ny_block,max_blocks), & ! ocean current, y-direction (m/s)
          ss_tltx    (nx_block,ny_block,max_blocks), & ! sea surface slope, x-direction (m/m)
          ss_tlty    (nx_block,ny_block,max_blocks), & ! sea surface slope, y-direction
-         hwater     (nx_block,ny_block,max_blocks), & ! water depth for seabed stress calc (landfast ice)
+         hwater     (nx_block,ny_block,max_blocks), & ! water depth for seabed stress calc (landfast ice) 
+         strwrsxT   (nx_block,ny_block,max_blocks), & ! wave radiative stress, x-direction (N/m^2)
+         strwrsyT   (nx_block,ny_block,max_blocks), & ! wave radiative stress, y-direction (N/m^2)
          strairxT   (nx_block,ny_block,max_blocks), & ! stress on ice by air, x-direction
          strairyT   (nx_block,ny_block,max_blocks), & ! stress on ice by air, y-direction
          strocnxT_iavg(nx_block,ny_block,max_blocks), & ! ice-ocean stress, x-direction, per ice area
@@ -421,6 +427,8 @@
          strocnyU   (nx_block,ny_block,max_blocks), & ! ice-ocean stress, y-direction
          strtltxU   (nx_block,ny_block,max_blocks), & ! stress due to sea surface slope, x-direction
          strtltyU   (nx_block,ny_block,max_blocks), & ! stress due to sea surface slope, y-direction
+         strwrsxU   (nx_block,ny_block,max_blocks), & ! wave radiative stress, x-direction (N/m^2)
+         strwrsyU   (nx_block,ny_block,max_blocks), & ! wave radiative stress, y-direction (N/m^2)
          strintxU   (nx_block,ny_block,max_blocks), & ! divergence of internal ice stress, x (N/m^2)
          strintyU   (nx_block,ny_block,max_blocks), & ! divergence of internal ice stress, y (N/m^2)
          daidtd     (nx_block,ny_block,max_blocks), & ! ice area tendency due to transport   (1/s)
@@ -744,6 +752,8 @@
 
       ss_tltx (:,:,:) = c0              ! sea surface tilt (m/m)
       ss_tlty (:,:,:) = c0
+      strwrsxT(:,:,:) = c0              ! wave radiative stress (N/m^2)
+      strwrsyT(:,:,:) = c0
       uocn    (:,:,:) = c0              ! surface ocean currents (m/s)
       vocn    (:,:,:) = c0
       frzmlt  (:,:,:) = c0              ! freezing/melting potential (W/m^2)
@@ -1073,6 +1083,8 @@
       strairyU(:,:,:) = c0
       strtltxU(:,:,:) = c0
       strtltyU(:,:,:) = c0
+      strwrsxU(:,:,:) = c0
+      strwrsyU(:,:,:) = c0
       strintxU(:,:,:) = c0
       strintyU(:,:,:) = c0
       dardg1dt(:,:,:) = c0

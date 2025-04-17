@@ -162,7 +162,7 @@
       use ice_flux, only: rdg_conv, rdg_shear, strairxT, strairyT, &
           strairxU, strairyU, uocn, vocn, ss_tltx, ss_tlty, fmU, &
           strtltxU, strtltyU, strocnxU, strocnyU, strintxU, strintyU, taubxU, taubyU, &
-          strax, stray, &
+          strax, stray, strwrsxT, strwrsyT, strwrsxU, strwrsyU, &
           TbU, hwater, dragiouU, &
           stressp_1, stressp_2, stressp_3, stressp_4, &
           stressm_1, stressm_2, stressm_3, stressm_4, &
@@ -326,6 +326,12 @@
                               field_loc_center, field_type_vector)
          call grid_average_X2Y('F',strairxT,'T',strairxU,'U')
          call grid_average_X2Y('F',strairyT,'T',strairyU,'U')
+         call ice_HaloUpdate (strwrsxT,         halo_info, &
+                              field_loc_center, field_type_vector)
+         call ice_HaloUpdate (strwrsyT,         halo_info, &
+                              field_loc_center, field_type_vector)
+         call grid_average_X2Y('F', strwrsxT, 'T', strwrsxU, 'U')
+         call grid_average_X2Y('F', strwrsyT, 'T', strwrsyU, 'U')
       endif
 
       !$OMP PARALLEL DO PRIVATE(iblk,ilo,ihi,jlo,jhi,this_block,ij,i,j)
@@ -352,6 +358,7 @@
                          uocnU     (:,:,iblk), vocnU     (:,:,iblk), &
                          strairxU  (:,:,iblk), strairyU  (:,:,iblk), &
                          ss_tltxU  (:,:,iblk), ss_tltyU  (:,:,iblk), &
+                         strwrsxU  (:,:,iblk), strwrsyU  (:,:,iblk), &
                          iceTmask  (:,:,iblk), iceUmask  (:,:,iblk), &
                          fmU       (:,:,iblk), dt,                   &
                          strtltxU  (:,:,iblk), strtltyU  (:,:,iblk), &

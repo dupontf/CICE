@@ -61,6 +61,8 @@
          vocnN    (:,:,:) , & ! j ocean current (m/s)
          ss_tltxN (:,:,:) , & ! sea surface slope, x-direction (m/m)
          ss_tltyN (:,:,:) , & ! sea surface slope, y-direction (m/m)
+         strwrsxN (:,:,:) , & ! wave radiative stress, x-direction (N/m^2)
+         strwrsyN (:,:,:) , & ! wave radiative stress, y-direction (N/m^2)
          cdn_ocnN (:,:,:) , & ! ocn drag coefficient
          waterxN  (:,:,:) , & ! for ocean stress calculation, x (m/s)
          wateryN  (:,:,:) , & ! for ocean stress calculation, y (m/s)
@@ -75,6 +77,8 @@
          vocnE    (:,:,:) , & ! j ocean current (m/s)
          ss_tltxE (:,:,:) , & ! sea surface slope, x-direction (m/m)
          ss_tltyE (:,:,:) , & ! sea surface slope, y-direction (m/m)
+         strwrsxE (:,:,:) , & ! wave radiative stress, x-direction (N/m^2)
+         strwrsyE (:,:,:) , & ! wave radiative stress, y-direction (N/m^2)
          cdn_ocnE (:,:,:) , & ! ocn drag coefficient
          waterxE  (:,:,:) , & ! for ocean stress calculation, x (m/s)
          wateryE  (:,:,:) , & ! for ocean stress calculation, y (m/s)
@@ -186,6 +190,8 @@
                    vocnN    (nx_block,ny_block,max_blocks), &
                    ss_tltxN (nx_block,ny_block,max_blocks), &
                    ss_tltyN (nx_block,ny_block,max_blocks), &
+                   strwrsxN (nx_block,ny_block,max_blocks), &
+                   strwrsyN (nx_block,ny_block,max_blocks), &
                    cdn_ocnN (nx_block,ny_block,max_blocks), &
                    waterxN  (nx_block,ny_block,max_blocks), &
                    wateryN  (nx_block,ny_block,max_blocks), &
@@ -201,6 +207,8 @@
                    vocnE    (nx_block,ny_block,max_blocks), &
                    ss_tltxE (nx_block,ny_block,max_blocks), &
                    ss_tltyE (nx_block,ny_block,max_blocks), &
+                   strwrsxE (nx_block,ny_block,max_blocks), &
+                   strwrsyE (nx_block,ny_block,max_blocks), &
                    cdn_ocnE (nx_block,ny_block,max_blocks), &
                    waterxE  (nx_block,ny_block,max_blocks), &
                    wateryE  (nx_block,ny_block,max_blocks), &
@@ -264,7 +272,7 @@
       use ice_flux, only: rdg_conv, rdg_shear, strairxT, strairyT, &
           strairxU, strairyU, uocn, vocn, ss_tltx, ss_tlty, fmU, &
           strtltxU, strtltyU, strocnxU, strocnyU, strintxU, strintyU, taubxU, taubyU, &
-          strax, stray, &
+          strax, stray, strwrsxT, strwrsyT, strwrsxU, strwrsyU, &
           TbU, hwater, dragiouU, dragiouN, dragiouE, &
           strairxN, strairyN, fmN, &
           strtltxN, strtltyN, strocnxN, strocnyN, strintxN, strintyN, taubxN, taubyN, &
@@ -425,6 +433,11 @@
                            field_loc_center, field_type_vector)
       call unstack_fields(fld3, tmass, aice_init, cdn_ocn)
       call unstack_fields(fld4, uocn, vocn, ss_tltx, ss_tlty)
+      ! halo update for wave radiative stress
+      call ice_HaloUpdate (strwrsxT,         halo_info, &
+                           field_loc_center, field_type_vector)
+      call ice_HaloUpdate (strwrsyT,         halo_info, &
+                           field_loc_center, field_type_vector)
 
       call grid_average_X2Y('S', tmass    , 'T'          , umass   , 'U')
       call grid_average_X2Y('S', aice_init, 'T'          , aiU     , 'U')
@@ -442,6 +455,8 @@
          call grid_average_X2Y('S', vocn     , grid_ocn_dynv, vocnE   , 'E')
          call grid_average_X2Y('S', ss_tltx  , grid_ocn_dynu, ss_tltxE, 'E')
          call grid_average_X2Y('S', ss_tlty  , grid_ocn_dynv, ss_tltyE, 'E')
+         call grid_average_X2Y('S', strwrsxT , 'T'          , strwrsxE, 'E')
+         call grid_average_X2Y('S', strwrsyT , 'T'          , strwrsyE, 'E')
          call grid_average_X2Y('S', tmass    , 'T'          , nmass   , 'N')
          call grid_average_X2Y('S', aice_init, 'T'          , ain     , 'N')
          call grid_average_X2Y('S', cdn_ocn  , 'T'          , cdn_ocnN, 'N')
@@ -449,6 +464,8 @@
          call grid_average_X2Y('S', vocn     , grid_ocn_dynv, vocnN   , 'N')
          call grid_average_X2Y('S', ss_tltx  , grid_ocn_dynu, ss_tltxN, 'N')
          call grid_average_X2Y('S', ss_tlty  , grid_ocn_dynv, ss_tltyN, 'N')
+         call grid_average_X2Y('S', strwrsxT , 'T'          , strwrsxN, 'N')
+         call grid_average_X2Y('S', strwrsyT , 'T'          , strwrsyN, 'N')
       endif
       !----------------------------------------------------------------
       ! Set wind stress to values supplied via NEMO or other forcing
@@ -471,6 +488,8 @@
          call grid_average_X2Y('F', strairxT, 'T', strairxU, 'U')
          call grid_average_X2Y('F', strairyT, 'T', strairyU, 'U')
       endif
+      call grid_average_X2Y('F', strwrsxT, 'T', strwrsxU, 'U')
+      call grid_average_X2Y('F', strwrsyT, 'T', strwrsyU, 'U')
 
       if (grid_ice == 'CD' .or. grid_ice == 'C') then
          if (.not. calc_strair) then
@@ -511,6 +530,7 @@
                             uocnU     (:,:,iblk), vocnU     (:,:,iblk), &
                             strairxU  (:,:,iblk), strairyU  (:,:,iblk), &
                             ss_tltxU  (:,:,iblk), ss_tltyU  (:,:,iblk), &
+                            strwrsxU  (:,:,iblk), strwrsyU  (:,:,iblk), &
                             iceTmask  (:,:,iblk), iceUmask  (:,:,iblk), &
                             fmU       (:,:,iblk), dt                  , &
                             strtltxU  (:,:,iblk), strtltyU  (:,:,iblk), &
@@ -569,6 +589,7 @@
                             uocnU     (:,:,iblk), vocnU     (:,:,iblk), &
                             strairxU  (:,:,iblk), strairyU  (:,:,iblk), &
                             ss_tltxU  (:,:,iblk), ss_tltyU  (:,:,iblk), &
+                            strwrsxU  (:,:,iblk), strwrsyU  (:,:,iblk), &
                             iceTmask  (:,:,iblk), iceUmask  (:,:,iblk), &
                             fmU       (:,:,iblk), dt,                   &
                             strtltxU  (:,:,iblk), strtltyU  (:,:,iblk), &
@@ -620,6 +641,7 @@
                             uocnN     (:,:,iblk), vocnN     (:,:,iblk), &
                             strairxN  (:,:,iblk), strairyN  (:,:,iblk), &
                             ss_tltxN  (:,:,iblk), ss_tltyN  (:,:,iblk), &
+                            strwrsxN  (:,:,iblk), strwrsyN  (:,:,iblk), &
                             iceTmask  (:,:,iblk), iceNmask  (:,:,iblk), &
                             fmN       (:,:,iblk), dt                  , &
                             strtltxN  (:,:,iblk), strtltyN  (:,:,iblk), &
@@ -653,6 +675,7 @@
                             uocnE     (:,:,iblk), vocnE     (:,:,iblk), &
                             strairxE  (:,:,iblk), strairyE  (:,:,iblk), &
                             ss_tltxE  (:,:,iblk), ss_tltyE  (:,:,iblk), &
+                            strwrsxE  (:,:,iblk), strwrsyE  (:,:,iblk), &
                             iceTmask  (:,:,iblk), iceEmask  (:,:,iblk), &
                             fmE       (:,:,iblk), dt                  , &
                             strtltxE  (:,:,iblk), strtltyE  (:,:,iblk), &

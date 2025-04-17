@@ -566,6 +566,7 @@
                             uocn,       vocn,       &
                             strairx,    strairy,    &
                             ss_tltx,    ss_tlty,    &
+                            strwrsx,    strwrsy,    &
                             iceTmask,   iceXmask,   &
                             fm,         dt,         &
                             strtltx,    strtlty,    &
@@ -616,7 +617,9 @@
          uocn    , & ! ocean current, x-direction (m/s)
          vocn    , & ! ocean current, y-direction (m/s)
          ss_tltx , & ! sea surface slope, x-direction (m/m)
-         ss_tlty     ! sea surface slope, y-direction
+         ss_tlty , & ! sea surface slope, y-direction
+         strwrsx , & ! wave radiative stress, x-direction (N/m^2)
+         strwrsy     ! wave radiative stress, y-direction (N/m^2)
 
       real (kind=dbl_kind), intent(in) :: &
          dt          ! time step
@@ -785,8 +788,8 @@
                file=__FILE__, line=__LINE__)
          endif
 
-         forcex(i,j) = strairx(i,j) + strtltx(i,j)
-         forcey(i,j) = strairy(i,j) + strtlty(i,j)
+         forcex(i,j) = strairx(i,j) + strtltx(i,j) + strwrsx(i,j)
+         forcey(i,j) = strairy(i,j) + strtlty(i,j) + strwrsy(i,j)
       enddo
 
       end subroutine dyn_prep2
