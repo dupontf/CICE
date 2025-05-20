@@ -2476,7 +2476,12 @@
          endif
 
          if (wave_spec) then
-            write(nu_diag,1031) ' wave_spec_file   = ', trim(wave_spec_file)
+            if (trim(wave_spec_file) == 'cpl_scalar') then
+               tmpstr2 = ' : wave spectrum provided using peak period via coupling'
+               write(nu_diag,1030) ' wave_spec_file   = ', trim(wave_spec_file), trim(tmpstr2)
+            else
+               write(nu_diag,1031) ' wave_spec_file   = ', trim(wave_spec_file)
+            endif
          endif
          if (trim(bgc_data_type) == 'ncar' .or. &
              trim(ocn_data_type) == 'ncar') then

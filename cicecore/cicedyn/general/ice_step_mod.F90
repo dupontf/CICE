@@ -880,6 +880,8 @@
       use ice_state, only: trcrn, aicen, aice, vice
       use ice_timers, only: ice_timer_start, ice_timer_stop, timer_column, &
           timer_fsd
+      use ice_forcing, only: wave_spec_file
+      use ice_flux, only: peakper
 
       real (kind=dbl_kind), intent(in) :: &
          dt      ! time step
@@ -914,6 +916,9 @@
          ihi = this_block%ihi
          jlo = this_block%jlo
          jhi = this_block%jhi
+
+         if ( trim(wave_spec_type) == 'random' .and. trim(wave_spec_file) == 'cpl_scalar' ) &
+            call wave_spec_parametrize( peakper(:,:,iblk), wave_spectrum(:,:,:,iblk) )
 
          do j = jlo, jhi
          do i = ilo, ihi

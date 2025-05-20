@@ -208,8 +208,8 @@
       call init_forcing_atmo    ! initialize atmospheric forcing (standalone)
 #endif
 
+      if (tr_fsd .and. wave_spec) call get_wave_spec ! wave spectrum in ice
 ! standalone
-!      if (tr_fsd .and. wave_spec) call get_wave_spec ! wave spectrum in ice
 !      call get_forcing_atmo     ! atmospheric forcing from data
 !      call get_forcing_ocn(dt)  ! ocean forcing from data
 

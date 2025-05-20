@@ -5402,6 +5402,9 @@
             if (trim(wave_spec_file(1:4)) == 'unkn') then
                call abort_ice (subname//'ERROR: wave_spec_file '//trim(wave_spec_file), &
                   file=__FILE__, line=__LINE__)
+            else if (trim(wave_spec_file(1:4)) == 'cpl_scalar') then
+               call ice_timer_stop(timer_fsd)
+               return
             else
 #ifdef USE_NETCDF
                call wave_spec_data
@@ -5749,6 +5752,59 @@
       endif
 
       end subroutine init_snowtable
+
+!=======================================================================
+!
+! F. Dupont: add a reconstruction function that, from
+! peak period, reconstructs the wave spectrum
+
+      subroutine wave_spec_parametrize( wave_peakper, wave_spectrum )
+
+      use ice_arrays_column, only: dwavefreq, wavefreq
+      use ice_constants, only: c0, p25, c1, c2, c5
+      use ice_blocks, only: nx_block, ny_block
+      use ice_domain_size, only: nfreq
+      use ice_timers, only: ice_timer_start, ice_timer_stop, timer_fsd
+
+      ! arguments
+      real(kind=dbl_kind), dimension(nx_block,ny_block) :: &
+         wave_peakper   ! wave peak period
+      real(kind=dbl_kind), dimension(nx_block,ny_block,nfreq) :: &
+         wave_spectrum  ! wave spectrum
+
+      ! local variables
+      integer (kind=int_kind) :: i, j, k
+      real(kind=dbl_kind) :: pfreq, freq, wm, Hs, pratio, &
+                             alpha = c5, &
+                             beta  = -1.25_dbl_kind, &
+                             grav  = 9.81_dbl_kind, &
+                             r2pi   = c2 * 3.141592653589793_dbl_kind
+      character(len=*), parameter :: subname = '(wave_spec_parametrize)'
+
+      if (local_debug .and. my_task == master_task) write(nu_diag,*) subname,'fdbg start'
+
+      call ice_timer_start(timer_fsd)
+
+      ! if no wave data is provided, wave_spectrum is zero everywhere
+      wave_spectrum(:,:,:) = c0
+
+      ! reconstruct a Pierson-Moskowitz Spectrum (JONSWAP with no peak enhancement)
+      do k = 1, nfreq
+         freq = wavefreq(k)
+         do j = 1, ny_block
+         do i = 1, nx_block
+            pfreq = c1 / wave_peakper(i,j)
+            pratio = (pfreq / freq)**4
+            wm = r2pi * pfreq
+            Hs = (0.4_dbl_kind/wm)**2 * grav
+            wave_spectrum(i,j,k) = alpha * (Hs*p25)**2 * pratio / freq * exp ( beta * pratio )
+         enddo
+         enddo
+      enddo
+
+      call ice_timer_stop(timer_fsd)
+
+      end subroutine wave_spec_parametrize
 
 !=======================================================================
 
