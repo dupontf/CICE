@@ -880,8 +880,11 @@
       use ice_state, only: trcrn, aicen, aice, vice
       use ice_timers, only: ice_timer_start, ice_timer_stop, timer_column, &
           timer_fsd
-      use ice_forcing, only: wave_spec_file
-      use ice_flux, only: peakper
+      use ice_forcing, only: wave_spec_file, wave_spec_parametrize
+      use ice_flux, only: peakper, signhei
+      use ice_communicate, only: my_task, master_task ! FD debug
+      use ice_grid, only: tmask
+
 
       real (kind=dbl_kind), intent(in) :: &
          dt      ! time step
@@ -918,7 +921,8 @@
          jhi = this_block%jhi
 
          if ( trim(wave_spec_type) == 'random' .and. trim(wave_spec_file) == 'cpl_scalar' ) &
-            call wave_spec_parametrize( peakper(:,:,iblk), wave_spectrum(:,:,:,iblk) )
+            call wave_spec_parametrize( tmask  (:,:,iblk), peakper      (:,:,iblk), &
+                                        signhei(:,:,iblk), wave_spectrum(:,:,:,iblk) )
 
          do j = jlo, jhi
          do i = ilo, ihi

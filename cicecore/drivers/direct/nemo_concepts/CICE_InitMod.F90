@@ -184,7 +184,8 @@
       call calc_timesteps       ! update timestep counter if not using npt_unit="1"
       call icepack_init_radiation ! initialize icepack shortwave tables
 
-      call icepack_query_tracer_flags(tr_aero_out=tr_aero, tr_zaero_out=tr_zaero)
+      call icepack_query_tracer_flags(tr_aero_out=tr_aero, tr_zaero_out=tr_zaero, &
+          tr_fsd_out=tr_fsd )
       call icepack_warnings_flush(nu_diag)
       if (icepack_warnings_aborted()) call abort_ice(subname, &
           file=__FILE__,line= __LINE__)

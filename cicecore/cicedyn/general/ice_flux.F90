@@ -62,6 +62,7 @@
          strwrsyT, & ! wave radiative stress, y-direction (N/m^2)
          hwater  , & ! water depth for seabed stress calc (landfast ice) 
          peakper , & ! peak wave period, used to reconstruct wave spectrum (s)
+         signhei , & ! eave significant height, used to reconstruct wave spectrum [m]
 
        ! out to atmosphere
          strairxT, & ! stress on ice by air, x-direction at T points, computed in icepack
@@ -414,6 +415,7 @@
          strwrsxT   (nx_block,ny_block,max_blocks), & ! wave radiative stress, x-direction (N/m^2)
          strwrsyT   (nx_block,ny_block,max_blocks), & ! wave radiative stress, y-direction (N/m^2)
          peakper    (nx_block,ny_block,max_blocks), & ! peak wave period (s)
+         signhei    (nx_block,ny_block,max_blocks), & ! wave significant height (m)
          strairxT   (nx_block,ny_block,max_blocks), & ! stress on ice by air, x-direction
          strairyT   (nx_block,ny_block,max_blocks), & ! stress on ice by air, y-direction
          strocnxT_iavg(nx_block,ny_block,max_blocks), & ! ice-ocean stress, x-direction, per ice area
@@ -762,6 +764,7 @@
       frzmlt_init(:,:,:) = c0           ! freezing/melting potential (W/m^2)
       sss     (:,:,:) = 34.0_dbl_kind   ! sea surface salinity (ppt)
       peakper (:,:,:) = 15.0_dbl_kind   ! peak period for waves [s]
+      signhei (:,:,:) = 1.0_dbl_kind    ! significant wave height [m]
 
       do iblk = 1, size(Tf,3)
       do j = 1, size(Tf,2)

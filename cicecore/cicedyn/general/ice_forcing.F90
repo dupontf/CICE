@@ -52,7 +52,7 @@
                 get_forcing_atmo, get_forcing_ocn, get_wave_spec, &
                 read_clim_data, read_clim_data_nc, &
                 interpolate_data, interp_coeff_monthly, &
-                read_data_nc_point, interp_coeff, &
+                read_data_nc_point, interp_coeff, wave_spec_parametrize, &
                 init_snowtable
 
       integer (kind=int_kind), public :: &
@@ -5402,7 +5402,7 @@
             if (trim(wave_spec_file(1:4)) == 'unkn') then
                call abort_ice (subname//'ERROR: wave_spec_file '//trim(wave_spec_file), &
                   file=__FILE__, line=__LINE__)
-            else if (trim(wave_spec_file(1:4)) == 'cpl_scalar') then
+            else if (trim(wave_spec_file) == 'cpl_scalar') then
                call ice_timer_stop(timer_fsd)
                return
             else
@@ -5758,7 +5758,7 @@
 ! F. Dupont: add a reconstruction function that, from
 ! peak period, reconstructs the wave spectrum
 
-      subroutine wave_spec_parametrize( wave_peakper, wave_spectrum )
+      subroutine wave_spec_parametrize( tmask, wave_peakper, wave_signhei, wave_spectrum )
 
       use ice_arrays_column, only: dwavefreq, wavefreq
       use ice_constants, only: c0, p25, c1, c2, c5
@@ -5767,14 +5767,17 @@
       use ice_timers, only: ice_timer_start, ice_timer_stop, timer_fsd
 
       ! arguments
+      logical(kind=log_kind), dimension(nx_block,ny_block) :: &
+         tmask          ! land/boundary mask, thickness (T-cell)
       real(kind=dbl_kind), dimension(nx_block,ny_block) :: &
-         wave_peakper   ! wave peak period
+         wave_peakper, &! wave peak period
+         wave_signhei   ! wave peak period
       real(kind=dbl_kind), dimension(nx_block,ny_block,nfreq) :: &
          wave_spectrum  ! wave spectrum
 
       ! local variables
       integer (kind=int_kind) :: i, j, k
-      real(kind=dbl_kind) :: pfreq, freq, wm, Hs, pratio, &
+      real(kind=dbl_kind) :: pfreq, freq, wm, Hs, pratio, puny, &
                              alpha = c5, &
                              beta  = -1.25_dbl_kind, &
                              grav  = 9.81_dbl_kind, &
@@ -5785,6 +5788,8 @@
 
       call ice_timer_start(timer_fsd)
 
+      call icepack_query_parameters(puny_out=puny)
+
       ! if no wave data is provided, wave_spectrum is zero everywhere
       wave_spectrum(:,:,:) = c0
 
@@ -5793,11 +5798,13 @@
          freq = wavefreq(k)
          do j = 1, ny_block
          do i = 1, nx_block
-            pfreq = c1 / wave_peakper(i,j)
-            pratio = (pfreq / freq)**4
-            wm = r2pi * pfreq
-            Hs = (0.4_dbl_kind/wm)**2 * grav
-            wave_spectrum(i,j,k) = alpha * (Hs*p25)**2 * pratio / freq * exp ( beta * pratio )
+            if ( tmask(i,j) .and. wave_peakper(i,j) > puny ) then
+               pfreq = c1 / wave_peakper(i,j)
+               pratio = (pfreq / freq)**4
+               wm = r2pi * pfreq
+               Hs = wave_signhei(i,j)
+               wave_spectrum(i,j,k) = alpha * (Hs*p25)**2 * pratio / freq * exp ( beta * pratio )
+            endif
          enddo
          enddo
       enddo
