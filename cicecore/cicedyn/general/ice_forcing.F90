@@ -5761,7 +5761,7 @@
       subroutine wave_spec_parametrize( tmask, wave_peakper, wave_signhei, wave_spectrum )
 
       use ice_arrays_column, only: dwavefreq, wavefreq
-      use ice_constants, only: c0, p25, c1, c2, c5
+      use ice_constants, only: c0, p25, c1, c2, c5, c20
       use ice_blocks, only: nx_block, ny_block
       use ice_domain_size, only: nfreq
       use ice_timers, only: ice_timer_start, ice_timer_stop, timer_fsd
@@ -5777,7 +5777,7 @@
 
       ! local variables
       integer (kind=int_kind) :: i, j, k
-      real(kind=dbl_kind) :: pfreq, freq, wm, Hs, pratio, puny, &
+      real(kind=dbl_kind) :: pfreq, freq, Hs, pratio, puny, a2, &
                              alpha = c5, &
                              beta  = -1.25_dbl_kind, &
                              grav  = 9.81_dbl_kind, &
@@ -5798,12 +5798,13 @@
          freq = wavefreq(k)
          do j = 1, ny_block
          do i = 1, nx_block
-            if ( tmask(i,j) .and. wave_peakper(i,j) > puny ) then
+            if ( tmask(i,j) .and. wave_peakper(i,j) > puny .and. wave_signhei(i,j) > puny ) then
                pfreq = c1 / wave_peakper(i,j)
                pratio = (pfreq / freq)**4
-               wm = r2pi * pfreq
                Hs = wave_signhei(i,j)
-               wave_spectrum(i,j,k) = alpha * (Hs*p25)**2 * pratio / freq * exp ( beta * pratio )
+               a2 = alpha * (Hs*p25)**2 * pratio / freq
+               if (pratio < c20) &
+               wave_spectrum(i,j,k) = a2 * exp ( beta * pratio )
             endif
          enddo
          enddo
