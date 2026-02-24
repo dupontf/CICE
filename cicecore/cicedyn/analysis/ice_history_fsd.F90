@@ -457,15 +457,20 @@
       if (allocated(a3Df)) then
 
       if (f_afsd(1:1) /= 'x') then
+         worke(:,:,:)=c0
          do j = 1, ny_block
          do i = 1, nx_block
-            do k = 1, nfsd_hist
-               worke(i,j,k)=c0
-               do n = 1, ncat_hist
-                  worke(i,j,k) = worke(i,j,k) + (trcrn(i,j,nt_fsd+k-1,n,iblk) &
-                               * aicen(i,j,n,iblk)/floe_binwidth(k))
+            if (aice(i,j,iblk) > puny) then
+               do k = 1, nfsd_hist
+                  do n = 1, ncat_hist
+                     worke(i,j,k) = worke(i,j,k) + (trcrn(i,j,nt_fsd+k-1,n,iblk) &
+                                  * aicen(i,j,n,iblk))
+                  end do
+                  worke(i,j,k) = worke(i,j,k) / aice(i,j,iblk)
                end do
-            end do
+            else
+               worke(i,j,1) = c1
+            endif
          end do
          end do
          call accum_hist_field(n_afsd-n3Dacum, iblk, nfsd_hist, worke, a3Df)
@@ -497,7 +502,7 @@
          do j = 1, ny_block
          do i = 1, nx_block
             workd(i,j,k,n) = trcrn(i,j,nt_fsd+k-1,n,iblk) &
-                           * aicen(i,j,n,iblk)/floe_binwidth(k)
+                           * aicen(i,j,n,iblk)
          end do
          end do
          end do
