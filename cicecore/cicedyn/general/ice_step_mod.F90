@@ -28,7 +28,7 @@
       use icepack_intfc, only: icepack_step_therm2
       use icepack_intfc, only: icepack_aggregate
       use icepack_intfc, only: icepack_step_ridge
-      use icepack_intfc, only: icepack_step_wavefracture
+      use icepack_intfc, only: icepack_step_wavefracture, icepack_step_wavefracture_BD
       use icepack_intfc, only: icepack_step_radiation
       use icepack_intfc, only: icepack_ocn_mixed_layer, icepack_atm_boundary
       use icepack_intfc, only: icepack_biogeochemistry, icepack_load_ocean_bio_array
@@ -631,6 +631,8 @@
       use ice_state, only: aice, aicen, aice0, trcr_depend, &
           aicen_init, vicen_init, trcrn, vicen, vsnon, &
           trcr_base, n_trcr_strata, nt_strata
+      use ice_forcing, only: wave_spec_file, wave_spec_parametrize
+      use ice_flux, only: peakper, signhei
 
       real (kind=dbl_kind), intent(in) :: &
          dt      ! time step
@@ -651,6 +653,8 @@
          tr_fsd,          & ! floe size distribution tracers
          z_tracers          ! vertical biogeochemistry
 
+      character (len=char_len) :: wave_spec_type
+
       type (block) :: &
          this_block         ! block information for current block
 
@@ -658,6 +662,7 @@
 
       call icepack_query_parameters(z_tracers_out=z_tracers)
       call icepack_query_tracer_sizes(ntrcr_out=ntrcr, nbtrcr_out=nbtrcr)
+      call icepack_query_parameters(wave_spec_type_out=wave_spec_type)
       call icepack_query_tracer_flags(tr_fsd_out=tr_fsd)
       call icepack_warnings_flush(nu_diag)
       if (icepack_warnings_aborted()) call abort_ice(error_message=subname, &
@@ -675,6 +680,10 @@
       ihi = this_block%ihi
       jlo = this_block%jlo
       jhi = this_block%jhi
+
+      if ( tr_fsd .and. trim(wave_spec_type) == 'random' .and. trim(wave_spec_file) == 'cpl_scalar' ) &
+         call wave_spec_parametrize( tmask  (:,:,iblk), peakper      (:,:,iblk), &
+                                     signhei(:,:,iblk), wave_spectrum(:,:,:,iblk) )
 
       do j = jlo, jhi
       do i = ilo, ihi
@@ -877,13 +886,12 @@
       use ice_arrays_column, only: wave_spectrum, &
           d_afsd_wave, floe_rad_l, floe_rad_c, wavefreq, dwavefreq
       use ice_domain_size, only: ncat, nfsd, nfreq
-      use ice_state, only: trcrn, aicen, aice, vice
+      use ice_state, only: trcrn, aicen, vicen, aice, vice
       use ice_timers, only: ice_timer_start, ice_timer_stop, timer_column, &
           timer_fsd
-      use ice_forcing, only: wave_spec_file, wave_spec_parametrize
-      use ice_flux, only: peakper, signhei
-      use ice_communicate, only: my_task, master_task ! FD debug
-      use ice_grid, only: tmask
+      use ice_grid, only: tarea
+      use ice_calendar, only: istep1 ! to pass to icepack for warning prints
+      use ice_communicate, only: my_task ! to pass to icepack for warning prints
 
 
       real (kind=dbl_kind), intent(in) :: &
@@ -920,23 +928,20 @@
          jlo = this_block%jlo
          jhi = this_block%jhi
 
-         if ( trim(wave_spec_type) == 'random' .and. trim(wave_spec_file) == 'cpl_scalar' ) &
-            call wave_spec_parametrize( tmask  (:,:,iblk), peakper      (:,:,iblk), &
-                                        signhei(:,:,iblk), wave_spectrum(:,:,:,iblk) )
-
          do j = jlo, jhi
          do i = ilo, ihi
             d_afsd_wave(i,j,:,iblk) = c0
-            call icepack_step_wavefracture (wave_spec_type, &
+            call icepack_step_wavefracture_BD (wave_spec_type, &
                                             dt, ncat, nfsd, nfreq,         &
-                                            aice           (i,j,    iblk), &
-                                            vice           (i,j,    iblk), &
+                                            tarea          (i,j,    iblk), &
                                             aicen          (i,j,:,  iblk), &
+                                            vicen          (i,j,:,  iblk), &
                                             floe_rad_l(:), floe_rad_c(:),  &
                                             wave_spectrum  (i,j,:,  iblk), &
                                             wavefreq(:),   dwavefreq(:),   &
                                             trcrn          (i,j,:,:,iblk), &
-                                            d_afsd_wave    (i,j,:,  iblk))
+                                            d_afsd_wave    (i,j,:,  iblk), &
+                                            istep1, i, j, my_task)
          end do ! i
          end do ! j
       end do    ! iblk
