@@ -670,9 +670,14 @@
             do j = 1, ny_block
             do i = 1, nx_block
                do n = 1, ncat
-               do k = 1, nfsd
-                  if (aicen(i,j,n,iblk) > puny) afsdn(k,n) = afsd(k)
-               enddo    ! k
+                  if ( aicen(i,j,n,iblk) > p1 ) then
+                      afsdn(:   ,n) = c0
+                      afsdn(nfsd,n) = c1
+                  else if ( aicen(i,j,n,iblk) > eps04 ) then
+                     do k = 1, nfsd
+                         afsdn(k,n) = afsd(k)
+                     enddo    ! k
+                  endif
                enddo    ! n
 
                call icepack_cleanup_fsd (ncat, nfsd, afsdn) ! renormalize
@@ -685,6 +690,7 @@
             enddo       ! i
             enddo       ! j
          enddo          ! iblk
+
 
          call icepack_warnings_flush(nu_diag)
          if (icepack_warnings_aborted()) call abort_ice(error_message=subname, &
