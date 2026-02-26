@@ -60,7 +60,7 @@
           get_forcing_atmo, get_forcing_ocn, alloc_forcing, get_wave_spec
       use ice_forcing_bgc, only: get_forcing_bgc, get_atm_bgc, &
           faero_data, faero_default, alloc_forcing_bgc
-      use ice_grid, only: init_grid1, init_grid2, alloc_grid, dealloc_grid
+      use ice_grid, only: init_grid1, init_grid2, alloc_grid
       use ice_history, only: init_hist, accum_hist
       use ice_restart_shared, only: restart, runid, runtype
       use ice_init, only: input_data, init_state
@@ -159,6 +159,7 @@
       use ice_kinds_mod
       use ice_restoring, only: ice_HaloRestore_update, restore_ice_mask, ice_read_restoring_mask
       use ice_transport_driver, only: init_transport
+      use ice_grid, only: dealloc_grid
 
       logical(kind=log_kind) :: tr_aero, tr_zaero, skl_bgc, z_tracers, &
          tr_fsd, wave_spec
