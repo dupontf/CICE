@@ -151,7 +151,7 @@
       use ice_forcing, only: init_forcing_ocn, init_forcing_atmo, &
             get_forcing_atmo, get_forcing_ocn, get_wave_spec
       use ice_forcing_bgc, only: get_forcing_bgc, get_atm_bgc, &
-            faero_data, faero_default, faero_optics, alloc_forcing_bgc
+            faero_data, faero_default, alloc_forcing_bgc
       use ice_history, only: accum_hist
       use ice_restart_shared, only: restart, runtype
       use ice_init, only: init_state
