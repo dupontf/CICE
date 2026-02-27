@@ -3353,13 +3353,6 @@
             enddo                  ! i
             enddo                  ! j
 
-         else
-
-            call abort_ice(subname//'ERROR: ice_data_type setting = '//trim(ice_data_type), &
-               file=__FILE__, line=__LINE__)
-
-         endif                     ! ice_data_type
-
          !---------------------------------------------------------
          ! ice distribution
          !---------------------------------------------------------
@@ -3368,7 +3361,7 @@
          ! interface for choosing aicen,vicen,vsnon based on averaged
          ! fields of aice,hice,hsno
          ! ----------------------------------------------------------
-         if (ice_data_type(1:6) == 'initnc') then
+         elseif (ice_data_type(1:6) == 'initnc') then
             ! find valid ice points
             icells = 0
             do j = jlo, jhi
@@ -3390,7 +3383,13 @@
                call put_avg_itd(icells, indxi, indxj,        &
                         aice, hice, hsno, aicen, vicen, vsnon)
             endif
-         endif
+
+         else
+
+            call abort_ice(subname//'ERROR: ice_data_type setting = '//trim(ice_data_type), &
+               file=__FILE__, line=__LINE__)
+
+         endif                     ! ice_data_type
 
          do n = 1, ncat
 
