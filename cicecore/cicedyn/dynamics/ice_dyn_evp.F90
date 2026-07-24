@@ -52,6 +52,8 @@
       use ice_exit, only: abort_ice
       use icepack_intfc, only: icepack_warnings_flush, icepack_warnings_aborted
       use icepack_intfc, only: icepack_ice_strength, icepack_query_parameters
+      use icepack_intfc, only: icepack_query_tracer_flags
+      use icepack_intfc, only: icepack_fsd_mean_size, icepack_fsd_strength_contribution
 
       implicit none
       private
@@ -118,6 +120,8 @@
          forceyU  (:,:,:) , & ! work array: combined atm stress and ocn tilt, y
          umass    (:,:,:) , & ! total mass of ice and snow (u grid)
          umassdti (:,:,:)     ! mass of U-cell/dte (kg/m^2 s)
+
+      logical(kind=log_kind) :: tr_fsd
 
       public :: evp, init_evp
 
@@ -248,6 +252,8 @@
 
       endif
 
+      call icepack_query_tracer_flags(tr_fsd_out=tr_fsd)
+
       end subroutine init_evp
 
 !=======================================================================
@@ -268,7 +274,7 @@
           ice_HaloDestroy, ice_HaloUpdate_stress
       use ice_blocks, only: block, get_block, nx_block, ny_block, nghost
       use ice_domain, only: nblocks, blocks_ice, halo_info, maskhalo_dyn
-      use ice_domain_size, only: max_blocks, ncat
+      use ice_domain_size, only: max_blocks, ncat, nfsd
       use ice_flux, only: rdg_conv, rdg_shear, strairxT, strairyT, &
           strairxU, strairyU, uocn, vocn, ss_tltx, ss_tlty, fmU, &
           strtltxU, strtltyU, strocnxU, strocnyU, strintxU, strintyU, taubxU, taubyU, &
@@ -293,6 +299,7 @@
       use ice_state, only: aice, aiU, vice, vsno, uvel, vvel, uvelN, vvelN, &
           uvelE, vvelE, divu, shear, vort, &
           aice_init, aice0, aicen, vicen, strength
+      use ice_state, only: trcrn
       use ice_timers, only: timer_dynamics, timer_bound, &
           ice_timer_start, ice_timer_stop, timer_evp
       use ice_dyn_shared, only: evp_algorithm, stack_fields, unstack_fields, &
@@ -331,6 +338,10 @@
 
       real (kind=dbl_kind), dimension(nx_block,ny_block,8):: &
          strtmp       ! stress combinations for momentum equation
+
+      real (kind=dbl_kind) :: &
+         mean_size, & ! FSD mean size of floe
+         floefrac     ! FSD diminishing factor on strength
 
       logical (kind=log_kind) :: &
          calc_strair  ! calculate air/ice stress
@@ -557,13 +568,20 @@
             do ij = 1, icellT(iblk)
                i = indxTi(ij, iblk)
                j = indxTj(ij, iblk)
+               if (tr_fsd) then
+                  call icepack_fsd_mean_size( ncat, nfsd, trcrn(i,j,:,:,iblk), &
+                                                    aicen(i,j,:,iblk), mean_size )
+                  call icepack_fsd_strength_contribution( mean_size, &
+                                                    vice (i,j,  iblk), floefrac )
+               endif
                call icepack_ice_strength(ncat     = ncat,                 &
                                          aice     = aice    (i,j,  iblk), &
                                          vice     = vice    (i,j,  iblk), &
                                          aice0    = aice0   (i,j,  iblk), &
                                          aicen    = aicen   (i,j,:,iblk), &
                                          vicen    = vicen   (i,j,:,iblk), &
-                                         strength = strength(i,j,  iblk))
+                                         strength = strength(i,j,  iblk), &
+                                         floefrac = floefrac )
             enddo  ! ij
 
          enddo  ! iblk
@@ -616,13 +634,20 @@
             do ij = 1, icellT(iblk)
                i = indxTi(ij, iblk)
                j = indxTj(ij, iblk)
+               if (tr_fsd) then
+                  call icepack_fsd_mean_size( ncat, nfsd, trcrn(i,j,:,:,iblk), &
+                                                    aicen(i,j,:,iblk), mean_size )
+                  call icepack_fsd_strength_contribution( mean_size, &
+                                                    vice (i,j,  iblk), floefrac )
+               endif
                call icepack_ice_strength(ncat     = ncat,                 &
                                          aice     = aice    (i,j,  iblk), &
                                          vice     = vice    (i,j,  iblk), &
                                          aice0    = aice0   (i,j,  iblk), &
                                          aicen    = aicen   (i,j,:,iblk), &
                                          vicen    = vicen   (i,j,:,iblk), &
-                                         strength = strength(i,j,  iblk) )
+                                         strength = strength(i,j,  iblk), &
+                                         floefrac = floefrac )
             enddo  ! ij
 
 
