@@ -269,7 +269,7 @@
 
       subroutine evp (dt)
 
-      use ice_arrays_column, only: Cdn_ocn
+      use ice_arrays_column, only: Cdn_ocn, floe_rad_c
       use ice_boundary, only: ice_halo, ice_HaloMask, ice_HaloUpdate, &
           ice_HaloDestroy, ice_HaloUpdate_stress
       use ice_blocks, only: block, get_block, nx_block, ny_block, nghost
@@ -570,7 +570,7 @@
                j = indxTj(ij, iblk)
                if (tr_fsd) then
                   call icepack_fsd_mean_size( ncat, nfsd, trcrn(i,j,:,:,iblk), &
-                                                    aicen(i,j,:,iblk), mean_size )
+                                              aicen(i,j,:,iblk), floe_rad_c, mean_size )
                   call icepack_fsd_strength_contribution( mean_size, &
                                                     vice (i,j,  iblk), floefrac )
                endif
@@ -636,7 +636,7 @@
                j = indxTj(ij, iblk)
                if (tr_fsd) then
                   call icepack_fsd_mean_size( ncat, nfsd, trcrn(i,j,:,:,iblk), &
-                                                    aicen(i,j,:,iblk), mean_size )
+                                              aicen(i,j,:,iblk), floe_rad_c, mean_size )
                   call icepack_fsd_strength_contribution( mean_size, &
                                                     vice (i,j,  iblk), floefrac )
                endif
