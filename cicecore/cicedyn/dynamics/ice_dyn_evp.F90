@@ -573,8 +573,7 @@
                                               aicen(i,j,:,iblk), floe_rad_c, mean_size )
                   call icepack_fsd_strength_contribution( mean_size, &
                                                     vice (i,j,  iblk), floefrac )
-               endif
-               call icepack_ice_strength(ncat     = ncat,                 &
+                  call icepack_ice_strength(ncat     = ncat,                 &
                                          aice     = aice    (i,j,  iblk), &
                                          vice     = vice    (i,j,  iblk), &
                                          aice0    = aice0   (i,j,  iblk), &
@@ -582,6 +581,15 @@
                                          vicen    = vicen   (i,j,:,iblk), &
                                          strength = strength(i,j,  iblk), &
                                          floefrac = floefrac )
+               else
+                  call icepack_ice_strength(ncat     = ncat,                 &
+                                         aice     = aice    (i,j,  iblk), &
+                                         vice     = vice    (i,j,  iblk), &
+                                         aice0    = aice0   (i,j,  iblk), &
+                                         aicen    = aicen   (i,j,:,iblk), &
+                                         vicen    = vicen   (i,j,:,iblk), &
+                                         strength = strength(i,j,  iblk))
+               endif
             enddo  ! ij
 
          enddo  ! iblk
@@ -639,8 +647,7 @@
                                               aicen(i,j,:,iblk), floe_rad_c, mean_size )
                   call icepack_fsd_strength_contribution( mean_size, &
                                                     vice (i,j,  iblk), floefrac )
-               endif
-               call icepack_ice_strength(ncat     = ncat,                 &
+                  call icepack_ice_strength(ncat     = ncat,                 &
                                          aice     = aice    (i,j,  iblk), &
                                          vice     = vice    (i,j,  iblk), &
                                          aice0    = aice0   (i,j,  iblk), &
@@ -648,6 +655,15 @@
                                          vicen    = vicen   (i,j,:,iblk), &
                                          strength = strength(i,j,  iblk), &
                                          floefrac = floefrac )
+               else
+                  call icepack_ice_strength(ncat     = ncat,                 &
+                                         aice     = aice    (i,j,  iblk), &
+                                         vice     = vice    (i,j,  iblk), &
+                                         aice0    = aice0   (i,j,  iblk), &
+                                         aicen    = aicen   (i,j,:,iblk), &
+                                         vicen    = vicen   (i,j,:,iblk), &
+                                         strength = strength(i,j,  iblk) )
+               endif
             enddo  ! ij
 
 
