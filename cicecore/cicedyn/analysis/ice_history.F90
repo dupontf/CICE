@@ -383,6 +383,8 @@
          f_siforcecorioly = 'mxxxx'
          f_siforceintstrx = 'mxxxx'
          f_siforceintstry = 'mxxxx'
+         f_siforcewrsx = 'mxxxx'
+         f_siforcewrsy = 'mxxxx'
          f_sidragtop = 'mxxxx'
          f_sistreave = 'mxxxx'
          f_sistremax = 'mxxxx'
@@ -433,6 +435,10 @@
          f_strtltyN = f_strtlty
          f_strtltxE = f_strtltx
          f_strtltyE = f_strtlty
+         f_strwrsxN = f_strwrsx
+         f_strwrsyN = f_strwrsy
+         f_strwrsxE = f_strwrsx
+         f_strwrsyE = f_strwrsy
          f_taubxN = f_taubx
          f_taubyN = f_tauby
          f_taubxE = f_taubx
@@ -569,6 +575,8 @@
       call broadcast_scalar (f_strocny, master_task)
       call broadcast_scalar (f_strintx, master_task)
       call broadcast_scalar (f_strinty, master_task)
+      call broadcast_scalar (f_strwrsx, master_task)
+      call broadcast_scalar (f_strwrsy, master_task)
       call broadcast_scalar (f_taubx, master_task)
       call broadcast_scalar (f_tauby, master_task)
       call broadcast_scalar (f_strairxN, master_task)
@@ -581,6 +589,8 @@
       call broadcast_scalar (f_strocnyN, master_task)
       call broadcast_scalar (f_strintxN, master_task)
       call broadcast_scalar (f_strintyN, master_task)
+      call broadcast_scalar (f_strwrsxN, master_task)
+      call broadcast_scalar (f_strwrsyN, master_task)
       call broadcast_scalar (f_taubxN, master_task)
       call broadcast_scalar (f_taubyN, master_task)
       call broadcast_scalar (f_strairxE, master_task)
@@ -593,6 +603,8 @@
       call broadcast_scalar (f_strocnyE, master_task)
       call broadcast_scalar (f_strintxE, master_task)
       call broadcast_scalar (f_strintyE, master_task)
+      call broadcast_scalar (f_strwrsxE, master_task)
+      call broadcast_scalar (f_strwrsyE, master_task)
       call broadcast_scalar (f_taubxE, master_task)
       call broadcast_scalar (f_taubyE, master_task)
       call broadcast_scalar (f_strength, master_task)
@@ -667,6 +679,8 @@
       call broadcast_scalar (f_siforcecorioly, master_task)
       call broadcast_scalar (f_siforceintstrx, master_task)
       call broadcast_scalar (f_siforceintstry, master_task)
+      call broadcast_scalar (f_siforcewrsx, master_task)
+      call broadcast_scalar (f_siforcewrsy, master_task)
       call broadcast_scalar (f_siitdconc, master_task)
       call broadcast_scalar (f_siitdthick, master_task)
       call broadcast_scalar (f_siitdsnthick, master_task)
@@ -1177,6 +1191,16 @@
              "positive is y direction on U grid", c1, c0,                &
              ns1, f_strinty)
 
+         call define_hist_field(n_strwrsx,"strwrsx","N/m^2",ustr2D, ucstr, &
+             "wave-ice radiation stress (x)",                            &
+             "none", c1, c0,                                             &
+             ns1, f_strwrsx)
+
+         call define_hist_field(n_strwrsy,"strwrsy","N/m^2",ustr2D, ucstr, &
+             "wave-ice radiation stress (y)",                            &
+             "none", c1, c0,                                             &
+             ns1, f_strwrsy)
+
          call define_hist_field(n_taubx,"taubx","N/m^2",ustr2D, ucstr,   &
              "seabed (basal) stress (x)",                                &
              "positive is x direction on U grid", c1, c0,                &
@@ -1286,6 +1310,26 @@
              "internal ice stress (y)",                                  &
              "positive is y direction on E grid", c1, c0,                &
              ns1, f_strintyE)
+
+         call define_hist_field(n_strwrsxN,"strwrsxN","N/m^2",nstr2D, ncstr, &
+             "wave-ice radiation stress (x)",                            &
+             "positive is x direction on N grid", c1, c0,                &
+             ns1, f_strwrsxN)
+
+         call define_hist_field(n_strwrsyN,"strwrsyN","N/m^2",nstr2D, ncstr, &
+             "wave-ice radiation stress (y)",                            &
+             "positive is y direction on N grid", c1, c0,                &
+             ns1, f_strwrsyN)
+
+         call define_hist_field(n_strwrsxE,"strwrsxE","N/m^2",estr2D, ecstr, &
+             "wave-ice radiation stress (x)",                            &
+             "positive is x direction on E grid", c1, c0,                &
+             ns1, f_strwrsxE)
+
+         call define_hist_field(n_strwrsyE,"strwrsyE","N/m^2",estr2D, ecstr, &
+             "wave-ice radiation stress (y)",                            &
+             "positive is y direction on E grid", c1, c0,                &
+             ns1, f_strwrsyE)
 
          call define_hist_field(n_taubxN,"taubxN","N/m^2",nstr2D, ncstr,   &
              "seabed (basal) stress (x)",                                &
@@ -1785,6 +1829,16 @@
              "none", c1, c0,                            &
              ns1, f_siforceintstry, avg_ice_present=.true., mask_ice_free_points=.true.)
 
+         call define_hist_field(n_siforcewrsx,"siforcewrsx","N m-2",tstr2D, tcstr, &
+             "wave-ice radiattion stress term", &
+             "none", c1, c0,                            &
+             ns1, f_siforcewrsx, avg_ice_present=.true., mask_ice_free_points=.true.)
+
+         call define_hist_field(n_siforcewrsy,"siforcewrsy","N m-2",tstr2D, tcstr, &
+             "wave-ice radiattion stress term", &
+             "none", c1, c0,                            &
+             ns1, f_siforcewrsy, avg_ice_present=.true., mask_ice_free_points=.true.)
+
          call define_hist_field(n_sistreave,"sistreave","N m-1",ustr2D, ucstr, &
              "average normal stress",                       &
              "sistreave is instantaneous", c1, c0,                  &
@@ -2132,11 +2186,11 @@
           melts, meltb, meltt, meltl, fresh, fsalt, fresh_ai, fsalt_ai, &
           fhocn, fhocn_ai, uatm, vatm, fbot, Tbot, Tsnice, fswthru_ai, &
           strairxU, strairyU, strtltxU, strtltyU, strintxU, strintyU, &
-          taubxU, taubyU, strocnxU, strocnyU, &
+          strwrsxU, strwrsyU, taubxU, taubyU, strocnxU, strocnyU, &
           strairxN, strairyN, strtltxN, strtltyN, strintxN, strintyN, &
-          taubxN, taubyN, strocnxN, strocnyN, &
+          strwrsxN, strwrsyN, taubxN, taubyN, strocnxN, strocnyN, &
           strairxE, strairyE, strtltxE, strtltyE, strintxE, strintyE, &
-          taubxE, taubyE, strocnxE, strocnyE, &
+          strwrsxE, strwrsyE, taubxE, taubyE, strocnxE, strocnyE, &
           fmU, fmN, fmE, daidtt, dvidtt, daidtd, dvidtd, fsurf, &
           fcondtop, fcondbot, fsurfn, fcondtopn, flatn, fsensn, albcnt, snwcnt, &
           stressp_1, stressm_1, stress12_1, &
@@ -2575,6 +2629,10 @@
              call accum_hist_field(n_strintx, iblk, strintxU(:,:,iblk), a2D)
          if (f_strinty(1:1) /= 'x') &
              call accum_hist_field(n_strinty, iblk, strintyU(:,:,iblk), a2D)
+         if (f_strwrsx(1:1) /= 'x') &
+             call accum_hist_field(n_strwrsx, iblk, strwrsxU(:,:,iblk), a2D)
+         if (f_strwrsy(1:1) /= 'x') &
+             call accum_hist_field(n_strwrsy, iblk, strwrsyU(:,:,iblk), a2D)
          if (f_taubx(1:1) /= 'x') &
              call accum_hist_field(n_taubx, iblk, taubxU(:,:,iblk), a2D)
          if (f_tauby(1:1) /= 'x') &
@@ -2619,6 +2677,14 @@
              call accum_hist_field(n_strintxE, iblk, strintxE(:,:,iblk), a2D)
          if (f_strintyE(1:1) /= 'x') &
              call accum_hist_field(n_strintyE, iblk, strintyE(:,:,iblk), a2D)
+         if (f_strwrsxN(1:1) /= 'x') &
+             call accum_hist_field(n_strwrsxN, iblk, strwrsxN(:,:,iblk), a2D)
+         if (f_strwrsyN(1:1) /= 'x') &
+             call accum_hist_field(n_strwrsyN, iblk, strwrsyN(:,:,iblk), a2D)
+         if (f_strwrsxE(1:1) /= 'x') &
+             call accum_hist_field(n_strwrsxE, iblk, strwrsxE(:,:,iblk), a2D)
+         if (f_strwrsyE(1:1) /= 'x') &
+             call accum_hist_field(n_strwrsyE, iblk, strwrsyE(:,:,iblk), a2D)
          if (f_taubxN(1:1) /= 'x') &
              call accum_hist_field(n_taubxN, iblk, taubxN(:,:,iblk), a2D)
          if (f_taubyN(1:1) /= 'x') &
@@ -3396,6 +3462,30 @@
            enddo
            enddo
            call accum_hist_field(n_siforceintstry, iblk, worka(:,:), a2D)
+         endif
+
+         if (f_siforcewrsx(1:1) /= 'x') then
+           worka(:,:) = c0
+           do j = jlo, jhi
+           do i = ilo, ihi
+              if (aice(i,j,iblk) > puny) then
+                 worka(i,j) = aice(i,j,iblk)*strwrsxU(i,j,iblk)
+              endif
+           enddo
+           enddo
+           call accum_hist_field(n_siforcewrsx, iblk, worka(:,:), a2D)
+         endif
+
+         if (f_siforcewrsy(1:1) /= 'x') then
+           worka(:,:) = c0
+           do j = jlo, jhi
+           do i = ilo, ihi
+              if (aice(i,j,iblk) > puny) then
+                 worka(i,j) = aice(i,j,iblk)*strwrsyU(i,j,iblk)
+              endif
+           enddo
+           enddo
+           call accum_hist_field(n_siforcewrsy, iblk, worka(:,:), a2D)
          endif
 
          endif ! if (allocated(a2D))

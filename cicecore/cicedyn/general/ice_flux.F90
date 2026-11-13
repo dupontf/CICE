@@ -101,6 +101,8 @@
          strtltyN, & ! stress due to sea surface slope, y-direction at N points
          strintxN, & ! divergence of internal ice stress, x at N points (N/m^2)
          strintyN, & ! divergence of internal ice stress, y at N points (N/m^2)
+         strwrsxN, & ! wave radiative stress, x-direction at N points (N/m^2)
+         strwrsyN, & ! wave radiative stress, y-direction at N points (N/m^2)
          taubxE  , & ! seabed stress (x) at E points (N/m^2)
          taubyE  , & ! seabed stress (y) at E points (N/m^2)
          strairxE, & ! stress on ice by air, x-direction at E points
@@ -111,6 +113,9 @@
          strtltyE, & ! stress due to sea surface slope, y-direction at E points
          strintxE, & ! divergence of internal ice stress, x at E points (N/m^2)
          strintyE, & ! divergence of internal ice stress, y at E points (N/m^2)
+         strwrsxE, & ! wave radiative stress, x-direction at E points (N/m^2)
+         strwrsyE, & ! wave radiative stress, y-direction at E points (N/m^2)
+
          daidtd  , & ! ice area tendency due to transport   (1/s)
          dvidtd  , & ! ice volume tendency due to transport (m/s)
          dagedtd , & ! ice age tendency due to transport (s/s)
@@ -617,6 +622,8 @@
          strtltyN   (nx_block,ny_block,max_blocks), & ! stress due to sea surface slope, y-direction at N points
          strintxN   (nx_block,ny_block,max_blocks), & ! divergence of internal ice stress, x at N points (N/m^2)
          strintyN   (nx_block,ny_block,max_blocks), & ! divergence of internal ice stress, y at N points (N/m^2)
+         strwrsxN   (nx_block,ny_block,max_blocks), & ! wave radiative stress, x-direction at N points (N/m^2)
+         strwrsyN   (nx_block,ny_block,max_blocks), & ! wave radiative stress, y-direction at N points (N/m^2)
          fmN        (nx_block,ny_block,max_blocks), & ! Coriolis param. * mass in N-cell (kg/s)
          TbN        (nx_block,ny_block,max_blocks), & ! factor for seabed stress (landfast ice)
          taubxE     (nx_block,ny_block,max_blocks), & ! seabed stress (x) at E points (N/m^2)
@@ -629,6 +636,8 @@
          strtltyE   (nx_block,ny_block,max_blocks), & ! stress due to sea surface slope, y-direction at E points
          strintxE   (nx_block,ny_block,max_blocks), & ! divergence of internal ice stress, x at E points (N/m^2)
          strintyE   (nx_block,ny_block,max_blocks), & ! divergence of internal ice stress, y at E points (N/m^2)
+         strwrsxE   (nx_block,ny_block,max_blocks), & ! wave radiative stress, x-direction at E points (N/m^2)
+         strwrsyE   (nx_block,ny_block,max_blocks), & ! wave radiative stress, y-direction at E points (N/m^2)
          fmE        (nx_block,ny_block,max_blocks), & ! Coriolis param. * mass in E-cell (kg/s)
          TbE        (nx_block,ny_block,max_blocks), & ! factor for seabed stress (landfast ice)
          stresspT   (nx_block,ny_block,max_blocks), & ! sigma11+sigma22
@@ -1127,6 +1136,8 @@
          strtltyE   (:,:,:) = c0
          strintxE   (:,:,:) = c0
          strintyE   (:,:,:) = c0
+         strwrsxE   (:,:,:) = c0
+         strwrsyE   (:,:,:) = c0
          fmE        (:,:,:) = c0
          TbE        (:,:,:) = c0
          taubxN     (:,:,:) = c0
@@ -1139,6 +1150,8 @@
          strtltyN   (:,:,:) = c0
          strintxN   (:,:,:) = c0
          strintyN   (:,:,:) = c0
+         strwrsxN   (:,:,:) = c0
+         strwrsyN   (:,:,:) = c0
          fmN        (:,:,:) = c0
          TbN        (:,:,:) = c0
       end if

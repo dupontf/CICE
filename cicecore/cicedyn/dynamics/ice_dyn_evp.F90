@@ -63,8 +63,6 @@
          vocnN    (:,:,:) , & ! j ocean current (m/s)
          ss_tltxN (:,:,:) , & ! sea surface slope, x-direction (m/m)
          ss_tltyN (:,:,:) , & ! sea surface slope, y-direction (m/m)
-         strwrsxN (:,:,:) , & ! wave radiative stress, x-direction (N/m^2)
-         strwrsyN (:,:,:) , & ! wave radiative stress, y-direction (N/m^2)
          cdn_ocnN (:,:,:) , & ! ocn drag coefficient
          waterxN  (:,:,:) , & ! for ocean stress calculation, x (m/s)
          wateryN  (:,:,:) , & ! for ocean stress calculation, y (m/s)
@@ -79,8 +77,6 @@
          vocnE    (:,:,:) , & ! j ocean current (m/s)
          ss_tltxE (:,:,:) , & ! sea surface slope, x-direction (m/m)
          ss_tltyE (:,:,:) , & ! sea surface slope, y-direction (m/m)
-         strwrsxE (:,:,:) , & ! wave radiative stress, x-direction (N/m^2)
-         strwrsyE (:,:,:) , & ! wave radiative stress, y-direction (N/m^2)
          cdn_ocnE (:,:,:) , & ! ocn drag coefficient
          waterxE  (:,:,:) , & ! for ocean stress calculation, x (m/s)
          wateryE  (:,:,:) , & ! for ocean stress calculation, y (m/s)
@@ -194,8 +190,6 @@
                    vocnN    (nx_block,ny_block,max_blocks), &
                    ss_tltxN (nx_block,ny_block,max_blocks), &
                    ss_tltyN (nx_block,ny_block,max_blocks), &
-                   strwrsxN (nx_block,ny_block,max_blocks), &
-                   strwrsyN (nx_block,ny_block,max_blocks), &
                    cdn_ocnN (nx_block,ny_block,max_blocks), &
                    waterxN  (nx_block,ny_block,max_blocks), &
                    wateryN  (nx_block,ny_block,max_blocks), &
@@ -211,8 +205,6 @@
                    vocnE    (nx_block,ny_block,max_blocks), &
                    ss_tltxE (nx_block,ny_block,max_blocks), &
                    ss_tltyE (nx_block,ny_block,max_blocks), &
-                   strwrsxE (nx_block,ny_block,max_blocks), &
-                   strwrsyE (nx_block,ny_block,max_blocks), &
                    cdn_ocnE (nx_block,ny_block,max_blocks), &
                    waterxE  (nx_block,ny_block,max_blocks), &
                    wateryE  (nx_block,ny_block,max_blocks), &
@@ -280,10 +272,10 @@
           strtltxU, strtltyU, strocnxU, strocnyU, strintxU, strintyU, taubxU, taubyU, &
           strax, stray, strwrsxT, strwrsyT, strwrsxU, strwrsyU, &
           TbU, hwater, dragiouU, dragiouN, dragiouE, &
-          strairxN, strairyN, fmN, &
+          strairxN, strairyN, fmN, strwrsxN, strwrsyN, &
           strtltxN, strtltyN, strocnxN, strocnyN, strintxN, strintyN, taubxN, taubyN, &
           TbN, &
-          strairxE, strairyE, fmE, &
+          strairxE, strairyE, fmE, strwrsxE, strwrsyE, &
           strtltxE, strtltyE, strocnxE, strocnyE, strintxE, strintyE, taubxE, taubyE, &
           TbE, &
           stressp_1, stressp_2, stressp_3, stressp_4, &

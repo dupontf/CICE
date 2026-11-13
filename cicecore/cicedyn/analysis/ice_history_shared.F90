@@ -255,18 +255,21 @@
            f_strcorx   = 'm', f_strcory    = 'm', &
            f_strocnx   = 'm', f_strocny    = 'm', &
            f_strintx   = 'm', f_strinty    = 'm', &
+           f_strwrsx   = 'm', f_strwrsy    = 'm', &
            f_taubx     = 'm', f_tauby      = 'm', &
            f_strairxN  = 'x', f_strairyN   = 'x', &
            f_strtltxN  = 'x', f_strtltyN   = 'x', &
            f_strcorxN  = 'x', f_strcoryN   = 'x', &
            f_strocnxN  = 'x', f_strocnyN   = 'x', &
            f_strintxN  = 'x', f_strintyN   = 'x', &
+           f_strwrsxN  = 'x', f_strwrsyN   = 'x', &
            f_taubxN    = 'x', f_taubyN     = 'x', &
            f_strairxE  = 'x', f_strairyE   = 'x', &
            f_strtltxE  = 'x', f_strtltyE   = 'x', &
            f_strcorxE  = 'x', f_strcoryE   = 'x', &
            f_strocnxE  = 'x', f_strocnyE   = 'x', &
            f_strintxE  = 'x', f_strintyE   = 'x', &
+           f_strwrsxE  = 'x', f_strwrsyE   = 'x', &
            f_taubxE    = 'x', f_taubyE     = 'x', &
            f_strength  = 'm', f_vort       = 'm', &
            f_divu      = 'm', f_shear      = 'm', &
@@ -324,6 +327,8 @@
            f_siforcecorioly = 'x', &
            f_siforceintstrx = 'x', &
            f_siforceintstry = 'x', &
+           f_siforcewrsx = 'x', &
+           f_siforcewrsy = 'x', &
            f_siitdconc = 'x', &
            f_siitdthick = 'x', &
            f_siitdsnthick = 'x', &
@@ -422,18 +427,21 @@
            f_strcorx,   f_strcory  , &
            f_strocnx,   f_strocny  , &
            f_strintx,   f_strinty  , &
+           f_strwrsx,   f_strwrsy  , &
            f_taubx,     f_tauby    , &
 !          f_strairxN,  f_strairyN , &
 !          f_strtltxN,  f_strtltyN , &
 !          f_strcorxN,  f_strcoryN , &
 !          f_strocnxN,  f_strocnyN , &
 !          f_strintxN,  f_strintyN , &
+!          f_strwrsxN,  f_strwrsyN , &
 !          f_taubxN,    f_taubyN   , &
 !          f_strairxE,  f_strairyE , &
 !          f_strtltxE,  f_strtltyE , &
 !          f_strcorxE,  f_strcoryE , &
 !          f_strocnxE,  f_strocnyE , &
 !          f_strintxE,  f_strintyE , &
+!          f_strwrsxE,  f_strwrsyE , &
 !          f_taubxE,    f_taubyE   , &
            f_strength,  f_vort     , &
            f_divu,      f_shear    , &
@@ -491,6 +499,8 @@
            f_siforcecorioly, &
            f_siforceintstrx, &
            f_siforceintstry, &
+           f_siforcewrsx, &
+           f_siforcewrsy, &
            f_siitdconc, &
            f_siitdthick, &
            f_siitdsnthick, &
@@ -614,18 +624,21 @@
            n_strcorx    , n_strcory    , &
            n_strocnx    , n_strocny    , &
            n_strintx    , n_strinty    , &
+           n_strwrsx    , n_strwrsy    , &
            n_taubx      , n_tauby      , &
            n_strairxN   , n_strairyN   , &
            n_strtltxN   , n_strtltyN   , &
            n_strcorxN   , n_strcoryN   , &
            n_strocnxN   , n_strocnyN   , &
            n_strintxN   , n_strintyN   , &
+           n_strwrsxN   , n_strwrsyN   , &
            n_taubxN     , n_taubyN     , &
            n_strairxE   , n_strairyE   , &
            n_strtltxE   , n_strtltyE   , &
            n_strcorxE   , n_strcoryE   , &
            n_strocnxE   , n_strocnyE   , &
            n_strintxE   , n_strintyE   , &
+           n_strwrsxE   , n_strwrsyE   , &
            n_taubxE     , n_taubyE     , &
            n_strength   , n_vort       , &
            n_divu       , n_shear      , &
@@ -681,6 +694,8 @@
            n_siforcecorioly,  &
            n_siforceintstrx,  &
            n_siforceintstry,  &
+           n_siforcewrsx,  &
+           n_siforcewrsy,  &
            n_siitdconc, &
            n_siitdthick, &
            n_siitdsnthick, &
